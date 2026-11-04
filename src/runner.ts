@@ -110,8 +110,13 @@ const MARK = { pass: "pass", fail: "FAIL", network: "net ", skipped: "skip" } as
 
 function record(r: Receipt) {
   receipts.push(r);
+  // A carried receipt must never read like a fresh one. The whole claim of
+  // this project is that a receipt proves what happened on the run that
+  // printed it, so a carried row says so on its face.
+  const mark = r.carried ? "carr" : MARK[r.status];
+  const provenance = r.carried ? ` (carried from ${r.ranAt})` : "";
   console.log(
-    `[${MARK[r.status]}] ${r.recipeId}` +
+    `[${mark}] ${r.recipeId}${provenance}` +
       (r.detail ? ` - ${r.detail}` : "") +
       (r.error ? ` - ${r.error}` : ""),
   );
@@ -419,21 +424,33 @@ function statusMarkdown(p: {
   blockHeight: number | null;
   receipts: Receipt[];
 }): string {
-  const icon = (s: Receipt["status"]) =>
-    s === "pass" ? "green" : s === "fail" ? "RED" : s === "network" ? "amber" : "grey";
+  const icon = (r: Receipt) =>
+    // A carried row is not green: it was not produced by this run.
+    r.carried
+      ? "carried"
+      : r.status === "pass"
+        ? "green"
+        : r.status === "fail"
+          ? "RED"
+          : r.status === "network"
+            ? "amber"
+            : "grey";
 
   const rows = p.receipts.map((r) => {
     const recipe = RECIPES.find((x) => x.id === r.recipeId);
     const proof = r.txid ? `\`${r.txid}\`` : r.blockHeight ? `block ${r.blockHeight}` : "-";
-    return `| ${icon(r.status)} | \`${r.recipeId}\` | ${recipe?.cost ?? "-"} | ${proof} | ${
-      (r.detail ?? r.error ?? "").replace(/\|/g, "\\|")
+    return `| ${icon(r)} | \`${r.recipeId}\` | ${recipe?.cost ?? "-"} | ${proof} | ${
+      ((r.carried ? "carried from the run at " + r.ranAt + ". " : "") + (r.detail ?? r.error ?? "")).replace(/\|/g, "\\|")
     } |`;
   });
 
   return `# Status
 
-Every row was produced by running the recipe, not by asserting it works.
-A grey row says what is missing instead of claiming a pass.
+Every green row was produced by running the recipe on this run, not by
+asserting it works. A grey row says what is missing instead of claiming a
+pass. A carried row was produced by an earlier run and is reproduced here with
+the time it actually happened, because a spend cannot run where there is no
+wallet.
 
 - Checked against: \`${p.endpoint}\`
 - Chain height at the time: ${p.blockHeight ?? "unknown"}

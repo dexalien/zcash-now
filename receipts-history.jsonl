@@ -37,3 +37,17 @@
 {"recipeId":"decode-address","status":"pass","ranAt":"2026-11-04T12:55:01.938Z","blockHeight":4582107,"txid":null}
 {"recipeId":"verify-txid","status":"pass","ranAt":"2026-11-04T12:55:01.939Z","blockHeight":4582107,"txid":"13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908"}
 {"recipeId":"shielded-send","status":"skipped","ranAt":"2026-11-04T12:55:02.286Z","blockHeight":4582107,"txid":null}
+{"recipeId":"chain-status","status":"pass","ranAt":"2026-11-04T12:58:01.576Z","blockHeight":4582114,"txid":null}
+{"recipeId":"standard-fee","status":"pass","ranAt":"2026-11-04T12:58:02.000Z","blockHeight":4582114,"txid":null}
+{"recipeId":"payment-request","status":"pass","ranAt":"2026-11-04T12:58:02.049Z","blockHeight":4582114,"txid":null}
+{"recipeId":"fact-base-drift","status":"pass","ranAt":"2026-11-04T12:58:02.051Z","blockHeight":4582114,"txid":null}
+{"recipeId":"decode-address","status":"pass","ranAt":"2026-11-04T12:58:02.440Z","blockHeight":4582114,"txid":null}
+{"recipeId":"verify-txid","status":"pass","ranAt":"2026-11-04T12:58:02.441Z","blockHeight":4582114,"txid":"13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908"}
+{"recipeId":"shielded-send","status":"skipped","ranAt":"2026-11-04T12:58:02.497Z","blockHeight":4582114,"txid":null}
+{"recipeId":"chain-status","status":"pass","ranAt":"2026-11-04T13:23:30.670Z","blockHeight":4582161,"txid":null}
+{"recipeId":"standard-fee","status":"pass","ranAt":"2026-11-04T13:23:30.918Z","blockHeight":4582161,"txid":null}
+{"recipeId":"payment-request","status":"pass","ranAt":"2026-11-04T13:23:30.954Z","blockHeight":4582161,"txid":null}
+{"recipeId":"fact-base-drift","status":"pass","ranAt":"2026-11-04T13:23:30.958Z","blockHeight":4582161,"txid":null}
+{"recipeId":"decode-address","status":"pass","ranAt":"2026-11-04T13:23:31.478Z","blockHeight":4582161,"txid":null}
+{"recipeId":"verify-txid","status":"pass","ranAt":"2026-11-04T13:23:31.480Z","blockHeight":4582161,"txid":"13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908"}
+{"recipeId":"shielded-send","status":"skipped","ranAt":"2026-11-04T13:23:31.523Z","blockHeight":4582161,"txid":null}
