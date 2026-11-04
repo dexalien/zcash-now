@@ -4,19 +4,19 @@ Every row was produced by running the recipe, not by asserting it works.
 A grey row says what is missing instead of claiming a pass.
 
 - Checked against: `testnet.zec.rocks:443`
-- Chain height at the time: 4582076
-- Generated: 2026-11-04T12:42:34.741Z
+- Chain height at the time: 4582092
+- Generated: 2026-11-04T12:48:31.287Z
 
 | | Recipe | Cost | Proof | Detail |
 |---|---|---|---|---|
-| green | `chain-status` | read | block 4582076 | tip 4582076, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1 |
-| green | `standard-fee` | read | block 4582076 | 1000 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee) |
-| green | `payment-request` | pure | block 4582076 | round-tripped and rejected 6 invalid URIs |
-| green | `decode-address` | pure | block 4582076 | round-tripped a utest unified address through Bech32m and F4Jumble, recovered typecode 0x3, and rejected 3 addresses a prefix check would accept |
-| green | `headless-send` | spend | `2f1ad878edea64068894bc5ac4c6e9a6cf0847c325ad4aa841415004fbdf19fe` | sent 10000 zat to its own unified address with memo "zcash-now 2026-11-04T12:40:47.091Z" |
-| green | `read-memo` | read | `2f1ad878edea64068894bc5ac4c6e9a6cf0847c325ad4aa841415004fbdf19fe` | memo decrypted locally from the tx mined at 4582078, after 4 sync(s) |
-| green | `verify-txid` | read | `2f1ad878edea64068894bc5ac4c6e9a6cf0847c325ad4aa841415004fbdf19fe` | txid mined at height 4582078, 15478 bytes |
-| grey | `shielded-send` | human | block 4582076 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
+| green | `chain-status` | read | block 4582092 | tip 4582092, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1 |
+| green | `standard-fee` | read | block 4582092 | 1000 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee) |
+| green | `payment-request` | pure | block 4582092 | round-tripped and rejected 6 invalid URIs |
+| green | `decode-address` | pure | block 4582092 | round-tripped a utest unified address through Bech32m and F4Jumble, recovered typecode 0x3, and rejected 3 addresses a prefix check would accept |
+| green | `headless-send` | spend | `13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908` | sent 10000 zat to its own unified address with memo "zcash-now 2026-11-04T12:47:20.519Z" |
+| green | `read-memo` | read | `13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908` | memo decrypted locally from the tx mined at 4582095, outputs in Ironwood, after 3 sync(s) |
+| green | `verify-txid` | read | `13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908` | txid mined at height 4582095, 9166 bytes |
+| grey | `shielded-send` | human | block 4582092 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
 
 **amber is not red.** A network row means the light-wallet server or the path
 to it did not answer, which says nothing about whether the recipe works. Only a
