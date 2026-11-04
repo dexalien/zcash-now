@@ -1,3 +1,10 @@
+@font-face {
+  font-family: "Geist Serif";
+  src: url("fonts/GeistSerifVF.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   --bg: #12110f;
   --bg-2: #1a1916;
@@ -43,7 +50,17 @@ section.hero { border-top: 0; padding: 80px 0 48px; }
 }
 .brand { color: var(--zec); }
 
-h1 { font-size: clamp(42px, 9vw, 78px); line-height: 1.02; letter-spacing: -.035em; margin: 0 0 22px; font-weight: 800; }
+h1 {
+  font-family: "Geist Serif", "Times New Roman", serif;
+  font-weight: 400;
+  font-style: italic;
+  font-synthesis: style;
+  font-variation-settings: "ELSH" 50;
+  font-size: clamp(40px, 11vw, 104px);
+  line-height: .98; letter-spacing: -.025em;
+  margin: 0 0 24px;
+}
+h1 em { font-style: italic; color: var(--zec); }
 .lede { font-size: clamp(18px, 3.2vw, 21px); color: var(--muted); max-width: 32em; margin: 0 auto; }
 .lede strong { color: var(--text); font-weight: 600; }
 .alt { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
@@ -73,17 +90,6 @@ h1 { font-size: clamp(42px, 9vw, 78px); line-height: 1.02; letter-spacing: -.035
     0 2px 0 #0b0a09,
     0 30px 60px -24px rgba(0,0,0,.95);
 }
-/* four cross-head screws holding the plate on */
-.screw {
-  position: absolute; width: 9px; height: 9px; border-radius: 50%;
-  background:
-    linear-gradient(45deg, rgba(0,0,0,0) 44%, rgba(20,18,15,.85) 45% 55%, rgba(0,0,0,0) 56%),
-    linear-gradient(-45deg, rgba(0,0,0,0) 44%, rgba(20,18,15,.85) 45% 55%, rgba(0,0,0,0) 56%),
-    radial-gradient(circle at 35% 30%, #e6e3dc, #9b9890 45%, #55534d 75%);
-  box-shadow: 0 1px 0 rgba(255,255,255,.25), inset 0 -1px 1px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.35);
-}
-.screw.tl { top: 7px; left: 8px; } .screw.tr { top: 7px; right: 8px; rotate: 30deg; }
-.screw.bl { bottom: 7px; left: 8px; rotate: 70deg; } .screw.br { bottom: 7px; right: 8px; rotate: 15deg; }
 .printer.printing .body { animation: hum .09s linear infinite; }
 
 .led {
@@ -94,11 +100,11 @@ h1 { font-size: clamp(42px, 9vw, 78px); line-height: 1.02; letter-spacing: -.035
 .led.fail { background: #ff6b5c; box-shadow: 0 0 6px 1px rgba(255,107,92,.7); }
 .printer.printing .led { background: #ffc34d; box-shadow: 0 0 8px 2px rgba(255,195,77,.75); animation: blink .35s steps(2) infinite; }
 
-/* the whole command, always: it wraps instead of scrolling */
+/* the command on one line: it fits on desktop, ellipsis on small screens */
 .body code {
   flex: 1; min-width: 0;
   text-align: left;
-  white-space: normal; overflow-wrap: anywhere;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   padding: 13px 16px;
   border-radius: 10px;
   background: linear-gradient(172deg, rgba(255,255,255,.07), rgba(255,255,255,0) 38%), #0b0a09;
@@ -123,7 +129,7 @@ h1 { font-size: clamp(42px, 9vw, 78px); line-height: 1.02; letter-spacing: -.035
 
 .mouth {
   position: relative; z-index: 2;
-  width: 64%; height: 40px; margin: -8px auto 0;
+  width: 62%; height: 30px; margin: -8px auto 0;
   border-radius: 0 0 16px 16px;
   border: 1px solid #121110; border-top: 0;
   background:
@@ -136,23 +142,16 @@ h1 { font-size: clamp(42px, 9vw, 78px); line-height: 1.02; letter-spacing: -.035
     0 2px 0 #0b0a09,
     0 14px 24px -10px rgba(0,0,0,.95);
 }
-.slit {
-  position: absolute; left: 50%; top: 13px;
-  width: min(392px, 94%); height: 6px; transform: translateX(-50%);
-  border-radius: 3px;
-  background: #000;
-  box-shadow: 0 1px 0 rgba(255,255,255,.08), inset 0 1px 2px rgba(0,0,0,1);
-}
 
 .plate {
-  position: absolute; left: 0; right: 0; bottom: 4px;
+  position: absolute; left: 0; right: 0; top: 13px;
   font: 700 8.5px var(--mono); letter-spacing: .22em; color: rgba(0,0,0,.6);
   text-shadow: 0 1px 0 rgba(255,255,255,.14);
 }
 .feed {
   position: relative; z-index: 1;
   width: min(420px, 100%);
-  margin: -25px auto 0;
+  margin: -3px auto 0;
   padding: 0 24px 44px;
   overflow: hidden;
 }
@@ -168,7 +167,7 @@ h1 { font-size: clamp(42px, 9vw, 78px); line-height: 1.02; letter-spacing: -.035
   position: relative;
   transform-origin: 50% 0;
   transform: translateY(-101%);
-  filter: drop-shadow(0 1px 0 rgba(0,0,0,.25)) drop-shadow(0 16px 18px rgba(0,0,0,.55));
+  filter: url(#crumple) drop-shadow(0 1px 0 rgba(0,0,0,.25)) drop-shadow(0 16px 18px rgba(0,0,0,.55));
 }
 .printer.printed .ticket {
   animation:
@@ -195,6 +194,14 @@ h1 { font-size: clamp(42px, 9vw, 78px); line-height: 1.02; letter-spacing: -.035
   mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / calc(2 * var(--z)) 100%;
 }
 /* ink bleed: rough edges from the SVG filter, a soft halo from the shadow */
+/* creases: low-frequency noise lit from the top left, multiplied onto the paper */
+.paper::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='760'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.009 .016' numOctaves='5' seed='14'/%3E%3CfeDiffuseLighting lighting-color='%23fff' surfaceScale='2.6'%3E%3CfeDistantLight azimuth='225' elevation='58'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
+  background-size: 100% 100%;
+  mix-blend-mode: multiply;
+  opacity: .32;
+}
 .print { filter: url(#ink); text-shadow: 0 0 .7px rgba(30,25,20,.55); }
 .paper p { margin: 0; }
 .paper header { text-align: center; padding-bottom: 14px; border-bottom: 1px dashed #a49d8c; }
@@ -219,7 +226,7 @@ h1 { font-size: clamp(42px, 9vw, 78px); line-height: 1.02; letter-spacing: -.035
 
 /* rubber seal: Zcash amber ink, speckled and warped by #rubber, slammed on after printing */
 .seal {
-  position: absolute; right: 16px; top: 96px;
+  position: absolute; right: 14px; top: 78px;
   width: 132px; height: 132px;
   color: var(--seal-ink);
   rotate: -14deg;
@@ -335,5 +342,5 @@ footer p { margin: 0 auto 8px; max-width: 46em; }
   .rows pre { margin-left: 14px; margin-right: 14px; }
   .steps { grid-template-columns: 1fr; gap: 28px; }
   .steps::before { display: none; }
-  .seal { width: 112px; height: 112px; top: 100px; }
+  .seal { width: 108px; height: 108px; top: 80px; }
 }
