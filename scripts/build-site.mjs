@@ -3,6 +3,7 @@
 // Run after `tsc`: it reads recipe and tool metadata from dist/.
 import { readFileSync, writeFileSync, existsSync, mkdirSync, cpSync, copyFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { RECIPES } from "../dist/recipes.js";
 import { TOOLS } from "../dist/facts.js";
@@ -36,6 +37,17 @@ const data = {
 
 mkdirSync(OUT, { recursive: true });
 cpSync(join(ROOT, "web"), OUT, { recursive: true });
+// Version the assets so a redeploy is never hidden behind a cached style.css/app.js.
+const v = createHash("sha256")
+  .update(readFileSync(join(ROOT, "web/style.css")))
+  .update(readFileSync(join(ROOT, "web/app.js")))
+  .digest("hex")
+  .slice(0, 10);
+const html = join(OUT, "index.html");
+writeFileSync(
+  html,
+  readFileSync(html, "utf8").replace(/(href="style\.css|src="app\.js)"/g, `$1?v=${v}"`),
+);
 writeFileSync(join(OUT, "data.json"), JSON.stringify(data, null, 2));
 for (const f of ["receipts.json", "llms.txt", "receipts-history.jsonl", "STATUS.md"])
   if (existsSync(join(ROOT, f))) copyFileSync(join(ROOT, f), join(OUT, f));

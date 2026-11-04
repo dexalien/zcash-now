@@ -1,5 +1,6 @@
 const EXPLORER = 'https://testnet.zcashexplorer.app/transactions/';
 const PRINT_MS = 2600;
+const POLL_MS = 60_000;
 const $ = (sel, el = document) => el.querySelector(sel);
 const printer = $('#printer');
 
@@ -16,12 +17,18 @@ $('#copy-cmd').onclick = async (e) => {
 };
 
 const data = await fetch('data.json', { cache: 'no-store' }).then((r) => r.json());
-await refreshFromRepo(data);
-const byId = Object.fromEntries(data.recipes.map((r) => [r.id, r]));
-
+let live = await refreshFromRepo(data);
 const status = fillTicket();
-renderTruth();
+renderBoard();
 print();
+
+// The board keeps itself current: re-read the receipts every minute.
+setInterval(async () => {
+  const before = data.generatedAt;
+  live = await refreshFromRepo(data);
+  renderBoard(data.generatedAt !== before);
+}, POLL_MS);
+setInterval(renderTick, 15_000);
 
 // Feeds the ticket out of the slot. Restarting the CSS animation is enough.
 function print() {
@@ -36,16 +43,19 @@ function print() {
   }, PRINT_MS);
 }
 
+function receipt(id) {
+  return data.recipes.find((r) => r.id === id)?.receipt;
+}
+
 function fillTicket() {
-  const send = byId['headless-send']?.receipt;
-  const read = byId['read-memo']?.receipt;
-  const verify = byId['verify-txid']?.receipt;
+  const send = receipt('headless-send');
+  const read = receipt('read-memo');
+  const verify = receipt('verify-txid');
   const lines = $('#t-lines');
-  const stamp = $('#stamp');
+  const seal = $('#seal');
 
   if (!send?.txid) {
-    stamp.textContent = 'PENDING';
-    stamp.className = 'stamp none';
+    seal.remove();
     $('#t-result').textContent = 'NO PROOF YET';
     row(lines, 'STATUS', 'waiting for first run');
     $('.t-thanks a').remove();
@@ -53,12 +63,12 @@ function fillTicket() {
   }
 
   const ok = send.status === 'pass' && read?.status !== 'fail' && verify?.status !== 'fail';
-  stamp.textContent = ok ? 'PASS' : 'FAIL';
-  stamp.className = ok ? 'stamp' : 'stamp fail';
+  $('.seal-pass', seal).textContent = ok ? 'PASS' : 'FAIL';
+  if (!ok) seal.classList.add('fail');
   $('#t-result').textContent = ok ? 'WORKS TODAY' : 'BROKEN';
 
-  const when = new Date(send.ranAt);
-  $('#t-date').textContent = `${when.toISOString().slice(0, 10)}  ${when.toISOString().slice(11, 19)} UTC`;
+  const when = new Date(send.ranAt).toISOString();
+  $('#t-date').textContent = `${when.slice(0, 10)}  ${when.slice(11, 19)} UTC`;
   $('#t-net').textContent = `NU7 TESTNET · ${data.endpoint.replace(':443', '')}`;
 
   const pool = read?.detail?.match(/outputs in ([\w, ]+?), after/)?.[1];
@@ -70,6 +80,7 @@ function fillTicket() {
   row(lines, 'ON-CHAIN', verify?.status === 'pass' ? 'VERIFIED ✓' : '—');
   row(lines, 'TOOL', `zcash-devtool ${send.toolVersions?.['zcash-devtool'] ?? ''}`);
   row(lines, 'PRINTED', ago(send.ranAt));
+  $('#seal-block').textContent = block ? `BLOCK ${block}` : when.slice(0, 10);
 
   barcode($('#barcode'), send.txid);
   $('#t-txid').textContent = send.txid;
@@ -77,23 +88,46 @@ function fillTicket() {
   return ok ? 'ok' : 'fail';
 }
 
-function renderTruth() {
-  const works = data.recipes.filter((r) => r.receipt?.status === 'pass');
-  $('#works-meta').textContent = `Checked against the chain at block ${data.blockHeight?.toLocaleString('en') ?? '?'}, ${ago(data.generatedAt)}.`;
-  for (const r of works) {
+function renderBoard(changed = false) {
+  const rows = $('#rows');
+  const open = new Set([...rows.querySelectorAll('details[open]')].map((d) => d.dataset.id));
+  rows.replaceChildren();
+
+  for (const r of data.recipes.filter((r) => r.receipt?.status === 'pass')) {
     const li = document.createElement('li');
-    li.innerHTML = '<details><summary><span class="mark">✓</span><span class="t"></span></summary><pre><code></code></pre></details>';
-    $('.t', li).textContent = r.task;
+    li.className = 'ok';
+    if (changed) li.classList.add('flash');
+    li.innerHTML = '<details><summary class="row"><span class="mark">✓</span><span class="what"></span><span class="tag pass"></span></summary><pre><code></code></pre></details>';
+    $('details', li).dataset.id = r.id;
+    $('details', li).open = open.has(r.id);
+    $('.what', li).textContent = r.task;
+    const h = r.receipt.blockHeight;
+    $('.tag', li).textContent = h ? `PASS · #${h.toLocaleString('en')}` : 'PASS';
     $('code', li).textContent = r.code;
-    $('#works').append(li);
+    rows.append(li);
   }
+
+  const divider = document.createElement('li');
+  divider.className = 'divider';
+  divider.textContent = "DON'T USE ON NU7";
+  rows.append(divider);
+
   for (const t of data.tools.filter((t) => t.status === 'broken')) {
     const li = document.createElement('li');
-    li.innerHTML = '<span><span class="mark">✗</span><b></b></span><span class="why"></span>';
+    li.className = 'bad';
+    li.innerHTML = '<div class="row"><span class="mark">✗</span><span class="what"><b></b><small></small></span><span class="tag broken">BROKEN</span></div>';
     $('b', li).textContent = t.name;
-    $('.why', li).textContent = t.why.split(/(?<=\.)\s/)[0];
-    $('#broken').append(li);
+    $('small', li).textContent = t.why.split(/(?<=\.)\s/)[0];
+    rows.append(li);
   }
+  renderTick();
+}
+
+function renderTick() {
+  $('#tick').textContent = `block #${data.blockHeight?.toLocaleString('en') ?? '?'} · ${ago(data.generatedAt)}`;
+  // Receipts older than two scheduled runs are not "live" any more; say so.
+  const stale = Date.now() - new Date(data.generatedAt) > 2.5 * 3600_000;
+  $('#live').classList.toggle('stale', stale || !live);
 }
 
 function row(dl, k, v) {
@@ -125,12 +159,17 @@ function ago(iso) {
 
 // The deploy is a snapshot; the runner commits new receipts to main every hour.
 // /live/* is proxied by Vercel to the repo, so the visitor only ever talks to
-// this host. If it fails, the snapshot built into data.json is still honest.
+// this host. Returns whether the live source answered.
 async function refreshFromRepo(d) {
   try {
     const rec = await fetch('live/receipts.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null));
-    if (!rec?.receipts || rec.generatedAt <= d.generatedAt) return;
-    Object.assign(d, { generatedAt: rec.generatedAt, blockHeight: rec.blockHeight, summary: rec.summary });
-    for (const r of d.recipes) r.receipt = rec.receipts.find((x) => x.recipeId === r.id) ?? r.receipt;
-  } catch {}
+    if (!rec?.receipts) return false;
+    if (rec.generatedAt > d.generatedAt) {
+      Object.assign(d, { generatedAt: rec.generatedAt, blockHeight: rec.blockHeight, summary: rec.summary });
+      for (const r of d.recipes) r.receipt = rec.receipts.find((x) => x.recipeId === r.id) ?? r.receipt;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
