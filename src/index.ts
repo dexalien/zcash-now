@@ -35,6 +35,7 @@ import {
   LINT_LIMITS,
 } from "./privacy.js";
 import { decodeUnifiedAddress, IRONWOOD_NOTE } from "./address.js";
+import { checkFactBase } from "./zipcheck.js";
 import { RECIPES, describeReceipt, findRecipes } from "./recipes.js";
 
 const server = new McpServer({ name: "zcash-now", version: "0.1.0" });
@@ -364,6 +365,40 @@ server.registerTool(
   async ({ code }) => {
     const findings = lint(code);
     return text(`${summarize(findings)}\n\n${JSON.stringify({ findings }, null, 2)}`);
+  },
+);
+
+server.registerTool(
+  "fact_base_drift",
+  {
+    title: "Is this server's own fact base still true",
+    description:
+      "Compares every ZIP status this server asserts against the published " +
+      "index at zips.z.cash and reports any drift. Facts read from the chain " +
+      "cannot go stale because they are asked for; stated facts can, so they " +
+      "are checked. Call this when you want to know whether to trust " +
+      "zcash_zips and zcash_rules right now.",
+    inputSchema: {},
+    annotations: { readOnlyHint: true, openWorldHint: true },
+  },
+  async () => {
+    try {
+      const r = await checkFactBase();
+      return json({
+        ...r,
+        verdict:
+          r.drift.length === 0
+            ? `All ${r.factsChecked} asserted ZIP statuses match the published index.`
+            : `${r.drift.length} drifted. Prefer the index over this server until it is updated.`,
+      });
+    } catch (e: any) {
+      return json({
+        error: String(e?.message ?? e),
+        note:
+          "Could not read the published index, so this is not an all-clear. " +
+          "Treat the stated ZIP statuses as unverified for now.",
+      });
+    }
   },
 );
 

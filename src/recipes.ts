@@ -134,6 +134,29 @@ console.log(uri, back.ok, back.payments[0].memo?.toString("utf8"));`,
     rules: ["six-hrps-not-one"],
   },
   {
+    id: "fact-base-drift",
+    task: "Check that the facts this server states still match the ZIPs",
+    aliases: [
+      "drift", "is this still true", "fact base", "zip status", "stale facts",
+      "self check", "audit the facts",
+    ],
+    cost: "read",
+    code: `import { checkFactBase } from "zcash-now/zipcheck";
+
+// Anything asked of the chain cannot go stale. A *stated* fact can, so the
+// stated ones are compared against the published ZIP index on every run.
+const r = await checkFactBase();
+if (r.drift.length) console.error(r.drift.map((d) => d.detail).join("\\n"));`,
+    proves:
+      "Every ZIP status this server asserts still matches zips.z.cash. When " +
+      "one changes, this goes red and names the drift, instead of the fact " +
+      "base quietly rotting.",
+    leaks:
+      "zips.z.cash learns the runner's IP address and that it fetched the " +
+      "public index. No address, key or transaction is involved.",
+    rules: [],
+  },
+  {
     id: "decode-address",
     task: "Check that an address is really usable, not just shaped right",
     aliases: [

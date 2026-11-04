@@ -24,6 +24,7 @@ import { RECIPES, type Receipt } from "./recipes.js";
 import { CHECKED_ON, ENDPOINTS } from "./facts.js";
 import { renderLlmsTxt } from "./llms.js";
 import { encodeUnifiedAddress, decodeUnifiedAddress } from "./address.js";
+import { checkFactBase } from "./zipcheck.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
@@ -193,6 +194,21 @@ async function main() {
       if (parse(bad).ok) throw new Error(`Parser accepted ${name}, which ZIP 321 forbids.`);
 
     return { detail: `round-tripped and rejected ${mustFail.length} invalid URIs` };
+  });
+
+  // ---- fact-base-drift (read) ---------------------------------------------
+  await run("fact-base-drift", async () => {
+    const r = await checkFactBase();
+    if (r.drift.length > 0)
+      throw new Error(
+        `${r.drift.length} ZIP(s) drifted from the published index. ` +
+          r.drift.map((d) => d.detail).join(" | "),
+      );
+    return {
+      detail:
+        `${r.factsChecked} asserted ZIP statuses all match the published ` +
+        `index (${r.rowsInIndex} rows read)`,
+    };
   });
 
   // ---- decode-address (pure) ----------------------------------------------

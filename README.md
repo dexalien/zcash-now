@@ -48,6 +48,19 @@ Three rules, in order of precedence:
    what happened. Nothing is described as working on the strength of having
    been written down.
 
+Rule 2 is the weak one, because a stated fact is one person's reading, frozen.
+So it is checked: `fact_base_drift` compares every ZIP status this server
+asserts against the published index on every run, and goes red when one moves.
+A ZIP the index's main table does not carry — a withdrawn one, for instance — is
+read from its own document instead, which is the primary source anyway.
+
+That check has already earned its place. Its first run flagged two
+discrepancies, and both turned out to be bugs in the checker rather than drift:
+the index writes `[Revision 1: NU6.3] Active` where we write
+`Revision 1 (NU6.3): Active`, and ZIP 254 is absent from the main table because
+it is withdrawn. Formatting is not drift, and a self-check that cries wolf is
+the same failure as a fact base that rots.
+
 A worked example of why rule 1 beats rule 2: the live server currently reports
 a standard fee of **1000 zatoshi per logical action** with `estimatorVersion: 0`,
 which the protocol defines as the static ZIP 317 marginal fee. ZIP 2009, which
@@ -57,7 +70,7 @@ correct either way, and a hardcoded 5000 would have been wrong today.
 
 ## Tools
 
-Fourteen, over stdio.
+Fifteen, over stdio.
 
 | Tool | What it does |
 |---|---|
@@ -65,6 +78,7 @@ Fourteen, over stdio.
 | `standard_fee` | The current fee from the server. `UNIMPLEMENTED` is a valid answer |
 | `verify_transaction` | Confirms a txid on chain, handling the byte-order reversal |
 | `zcash_rules` | The NU6.3/NU7 rules agents get wrong, filterable by whether they cost funds or leak privacy |
+| `fact_base_drift` | Checks this server's own stated ZIP statuses against zips.z.cash |
 | `zcash_zips` | The ZIPs that matter, each with its own current status |
 | `typecodes` | The ZIP 316 registry, and what a parser must do with each range |
 | `recipe_that_works` | Working code for a task, plus the receipt from its last run |
@@ -207,9 +221,11 @@ their own model provider.
 - **Amount privacy is not addressed.** A distinctive amount can identify a
   payment even when sender and receiver are shielded, and neither lint looks at
   amounts.
-- **The fact base is a single maintainer's reading.** Nothing cross-checks it
-  against the ZIPs automatically. A linter over the fact base against
-  `zips.z.cash` would make rule 2 as self-correcting as rule 1 already is.
+- **The drift check covers ZIP statuses, not claims.** It verifies that ZIP 326
+  is still Draft; it cannot verify that our one-line summary of what ZIP 326
+  *says* is still accurate. Diffing the ZIP documents themselves and flagging
+  changed sections is the next step, and until then the prose in the rule base
+  is a reading, not a quotation.
 
 Self-custody alone is not a privacy design, and neither is being read-only.
 This server's privacy argument is narrower and, we think, more honest: **code
