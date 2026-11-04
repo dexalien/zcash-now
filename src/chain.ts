@@ -116,6 +116,14 @@ export async function getTransaction(txidHex: string) {
   });
 }
 
+/**
+ * How far blockHeight may sit from estimatedHeight before the backend is
+ * really behind. NU7 targets 25-second blocks (ZIP 218), so the two values
+ * are routinely a block apart simply because a block arrived between them.
+ * Treating that as "still syncing" reports a healthy server as broken.
+ */
+export const SYNC_TOLERANCE_BLOCKS = 3;
+
 export interface ChainStatus {
   endpoint: string;
   chainName: string;
@@ -123,6 +131,8 @@ export interface ChainStatus {
   network: string;
   height: number;
   estimatedHeight: number;
+  /** estimatedHeight - height. Negative means the tip is ahead of the estimate. */
+  heightGap: number;
   synced: boolean;
   consensusBranchId: string;
   serverVersion: string;
@@ -146,6 +156,7 @@ export async function chainStatus(): Promise<ChainStatus> {
   const info = await getLightdInfo();
   const height = Number(info.blockHeight);
   const estimated = Number(info.estimatedHeight);
+  const gap = estimated === 0 ? 0 : estimated - height;
   const isTest = info.chainName === "test";
 
   const activation = isTest
@@ -160,8 +171,10 @@ export async function chainStatus(): Promise<ChainStatus> {
     network: isTest ? "test" : "main",
     height,
     estimatedHeight: estimated,
-    // estimatedHeight is below the tip while the backend is still syncing.
-    synced: estimated === 0 || height >= estimated,
+    heightGap: gap,
+    // A gap within tolerance is a block arriving mid-call, not a backend
+    // that is behind. See SYNC_TOLERANCE_BLOCKS.
+    synced: estimated === 0 || gap <= SYNC_TOLERANCE_BLOCKS,
     consensusBranchId: info.consensusBranchId,
     serverVersion: info.version,
     serverVendor: info.vendor,

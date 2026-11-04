@@ -1,0 +1,66 @@
+{
+  "generatedAt": "2026-11-04T11:31:29.731Z",
+  "endpoint": "testnet.zec.rocks:443",
+  "blockHeight": 4581911,
+  "factsCheckedOn": "2026-11-04",
+  "summary": {
+    "pass": 3,
+    "fail": 0,
+    "skipped": 2
+  },
+  "receipts": [
+    {
+      "recipeId": "chain-status",
+      "status": "pass",
+      "ranAt": "2026-11-04T11:31:28.677Z",
+      "blockHeight": 4581911,
+      "toolVersions": {
+        "zcash-now": "0.1.0",
+        "node": "v24.18.0",
+        "@grpc/grpc-js": "1.14.7",
+        "proto": "zcash/lightwallet-protocol v0.6.0"
+      },
+      "detail": "tip 4581911, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1"
+    },
+    {
+      "recipeId": "standard-fee",
+      "status": "pass",
+      "ranAt": "2026-11-04T11:31:29.426Z",
+      "blockHeight": 4581911,
+      "toolVersions": {
+        "zcash-now": "0.1.0",
+        "node": "v24.18.0",
+        "@grpc/grpc-js": "1.14.7",
+        "proto": "zcash/lightwallet-protocol v0.6.0"
+      },
+      "detail": "1000 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee)"
+    },
+    {
+      "recipeId": "payment-request",
+      "status": "pass",
+      "ranAt": "2026-11-04T11:31:29.729Z",
+      "blockHeight": 4581911,
+      "toolVersions": {
+        "zcash-now": "0.1.0",
+        "node": "v24.18.0",
+        "@grpc/grpc-js": "1.14.7",
+        "proto": "zcash/lightwallet-protocol v0.6.0"
+      },
+      "detail": "round-tripped and rejected 5 invalid URIs"
+    },
+    {
+      "recipeId": "verify-txid",
+      "status": "skipped",
+      "ranAt": "2026-11-04T11:31:29.731Z",
+      "blockHeight": 4581911,
+      "detail": "No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule."
+    },
+    {
+      "recipeId": "shielded-send",
+      "status": "skipped",
+      "ranAt": "2026-11-04T11:31:29.731Z",
+      "blockHeight": 4581911,
+      "detail": "No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule."
+    }
+  ]
+}
