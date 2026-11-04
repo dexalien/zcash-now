@@ -70,9 +70,10 @@ export const UPGRADES = {
     mainnetHeightDecidedIn: "https://github.com/zcash/zips/pull/1405",
     mainnetEstimate: "2026-11-06T00:45Z/2026-11-06T02:35Z",
     /**
-     * Known-stale claim in the wild. October material, including the
-     * Free Society Hack builder pack, still says mainnet activation is
-     * unscheduled. It was scheduled on 2026-10-20.
+     * A claim still in circulation. Developer material written before
+     * 2026-10-20 says mainnet activation is unscheduled; the height was
+     * decided that day. This is the shape of the problem this server
+     * exists for: the rule changed, the documents did not.
      */
     commonStaleClaim: "Mainnet activation isn't scheduled yet",
   },
