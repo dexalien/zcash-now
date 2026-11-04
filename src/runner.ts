@@ -31,8 +31,11 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
 
 const SEALED_TXID = process.env.ZCASH_NOW_SEALED_TXID?.trim() || "";
-/** Spending is opt-in per run, even on a machine that holds a wallet. */
-const SPEND = process.env.ZCASH_NOW_SPEND === "1";
+/**
+ * Spending is opt-in per run, even on a machine that holds a wallet. A flag as
+ * well as the env var, because `VAR=1 cmd` is bash-only and fails in PowerShell.
+ */
+const SPEND = process.env.ZCASH_NOW_SPEND === "1" || process.argv.includes("--spend");
 const SEND_ZATS = Number(process.env.ZCASH_NOW_SEND_ZATS ?? 10_000);
 
 /**
@@ -298,7 +301,7 @@ async function main() {
     }
   } else {
     const why = devtool
-      ? "Wallet present but spending not requested. Set ZCASH_NOW_SPEND=1."
+      ? "Wallet present but spending not requested. Run with --spend (or ZCASH_NOW_SPEND=1)."
       : "No wallet on this runner. Spends run from a machine that holds a testnet wallet (see src/devtool.ts).";
     for (const id of ["headless-send", "read-memo"]) {
       const prev = previous(id);

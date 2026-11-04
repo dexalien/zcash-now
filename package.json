@@ -23,7 +23,7 @@
     "demo": "npx --yes serve demo -l 5173",
     "test": "node test/f4jumble.test.mjs && node test/address.test.mjs",
     "site": "node scripts/build-site.mjs",
-    "spend": "ZCASH_NOW_SPEND=1 node dist/runner.js"
+    "spend": "node dist/runner.js --spend"
   },
   "dependencies": {
     "@grpc/grpc-js": "1.14.7",

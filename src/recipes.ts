@@ -15,7 +15,7 @@
  *             for lack of funds rather than for a real regression, which
  *             would make this project lie. headless-send sends to itself, so
  *             a run costs only the fee; it still only runs when asked
- *             (ZCASH_NOW_SPEND=1) from a machine that holds the wallet.
+ *             (--spend or ZCASH_NOW_SPEND=1) from a machine that holds the wallet.
  *   human   - needs a person to approve in a wallet UI. Cannot be scheduled.
  */
 
