@@ -28,6 +28,13 @@ import { chainStatus, getStandardFee, getTransaction, closeChain } from "./chain
 import { lint, summarize } from "./lint.js";
 import { explain } from "./errors.js";
 import { build, parse, ENFORCED_RULES } from "./zip321.js";
+import {
+  privacyLint,
+  summarizePrivacy,
+  PRIVACY_RULE_IDS,
+  LINT_LIMITS,
+} from "./privacy.js";
+import { decodeUnifiedAddress, IRONWOOD_NOTE } from "./address.js";
 import { RECIPES, describeReceipt, findRecipes } from "./recipes.js";
 
 const server = new McpServer({ name: "zcash-now", version: "0.1.0" });
@@ -356,6 +363,57 @@ server.registerTool(
   async ({ code }) => {
     const findings = lint(code);
     return text(`${summarize(findings)}\n\n${JSON.stringify({ findings }, null, 2)}`);
+  },
+);
+
+server.registerTool(
+  "privacy_lint",
+  {
+    title: "Find code that leaks, even when it works",
+    description:
+      "Scans code for privacy leaks rather than for bugs: transparent " +
+      "recipients, identifying data in memos, plaintext light-wallet " +
+      "connections, explorer lookups, viewing or spending keys in source, and " +
+      "address reuse. Each finding says what becomes visible and to whom. " +
+      "Correct code can still leak, which is why this is separate from " +
+      "lint_zcash_code.",
+    inputSchema: {
+      code: z.string().describe("Source code to scan. Any language."),
+    },
+    annotations: { readOnlyHint: true },
+  },
+  async ({ code }) => {
+    const findings = privacyLint(code);
+    return text(
+      `${summarizePrivacy(findings)}\n\n` +
+        `What this cannot see:\n- ${LINT_LIMITS.join("\n- ")}\n\n` +
+        JSON.stringify({ findings, rulesChecked: PRIVACY_RULE_IDS }, null, 2),
+    );
+  },
+);
+
+server.registerTool(
+  "decode_address",
+  {
+    title: "Decode a unified address properly",
+    description:
+      "Decodes a unified address or viewing key: Bech32m, then the F4Jumble " +
+      "inverse, then the ZIP 316 typecodes, enforcing ordering, duplication, " +
+      "shielded-item and MUST-understand metadata rules. A prefix check cannot " +
+      "do any of this, and accepts corrupted addresses. Pass height or now to " +
+      "evaluate an address that carries an expiry; without them an expiring " +
+      "address is rejected rather than accepted unchecked.",
+    inputSchema: {
+      address: z.string().describe("A unified address (u, utest, zu, zutest, tu, tutest) or viewing key."),
+      height: z.number().int().optional().describe("Current chain height, to evaluate a 0xE0 expiry."),
+      now: z.number().int().optional().describe("Current unix time in seconds, to evaluate a 0xE1 expiry."),
+      network: z.enum(["main", "test"]).optional().describe("Reject the address if it is for the other network."),
+    },
+    annotations: { readOnlyHint: true },
+  },
+  async ({ address, height, now, network }) => {
+    const r = decodeUnifiedAddress(address, { height, now, network });
+    return json({ ...r, ironwoodNote: IRONWOOD_NOTE });
   },
 );
 
