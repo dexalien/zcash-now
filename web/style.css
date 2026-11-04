@@ -1,0 +1,116 @@
+:root {
+  --bg: #12110f;
+  --bg-2: #1b1a17;
+  --text: #f1ede3;
+  --muted: #a39d90;
+  --line: #34312b;
+  --zec: #f4b728;
+  --paper: #f7f3e8;
+  --ink: #1d1c1a;
+  --ink-soft: #6b665c;
+  --pass: #1d7a4c;
+  --fail: #c2362b;
+  --ok: #5fc48e;
+  --bad: #ef6b5f;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 var(--sans); }
+a { color: inherit; text-underline-offset: 3px; }
+a:hover { color: var(--zec); }
+:focus-visible { outline: 2px solid var(--zec); outline-offset: 3px; }
+
+main { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+section, footer { padding: 56px 0; border-top: 1px solid var(--line); }
+section.hero { border-top: 0; padding: 72px 0 56px; }
+
+.label, .brand {
+  font: 600 12px var(--mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 20px;
+}
+.brand { color: var(--zec); }
+
+h1 { font-size: clamp(40px, 9vw, 72px); line-height: 1.02; letter-spacing: -.03em; margin: 0 0 20px; font-weight: 800; }
+.lede { font-size: clamp(18px, 3.2vw, 22px); color: var(--muted); max-width: 34em; margin: 0 0 32px; }
+.lede strong { color: var(--text); font-weight: 600; }
+
+.install {
+  display: flex; align-items: stretch;
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px;
+  overflow: hidden;
+}
+.install code { flex: 1; min-width: 0; padding: 16px 18px; font: 14px/1.5 var(--mono); overflow-x: auto; white-space: nowrap; }
+.install button {
+  flex: none; border: 0; background: var(--zec); color: #1a1405;
+  font: 700 14px var(--sans); padding: 0 22px; cursor: pointer;
+}
+.install button:hover { filter: brightness(1.08); }
+.alt { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
+
+/* the receipt */
+.receipt {
+  position: relative; max-width: 420px; margin: 0 auto;
+  background: var(--paper); color: var(--ink); font-family: var(--mono);
+  padding: 30px 26px 26px;
+  -webkit-mask:
+    radial-gradient(circle at 50% 0, transparent 4px, #000 4.5px) top / 9px 51% repeat-x,
+    radial-gradient(circle at 50% 100%, transparent 4px, #000 4.5px) bottom / 9px 51% repeat-x;
+  mask:
+    radial-gradient(circle at 50% 0, transparent 4px, #000 4.5px) top / 9px 51% repeat-x,
+    radial-gradient(circle at 50% 100%, transparent 4px, #000 4.5px) bottom / 9px 51% repeat-x;
+}
+.r-title { font-size: 15px; font-weight: 700; margin: 0 110px 18px 0; line-height: 1.4; }
+.stamp {
+  position: absolute; top: 28px; right: 22px; transform: rotate(-9deg);
+  border: 3px solid currentColor; border-radius: 6px; padding: 4px 10px;
+  font: 800 18px var(--mono); letter-spacing: .12em; color: var(--pass); opacity: .9;
+}
+.stamp.fail { color: var(--fail); }
+.stamp.none { color: var(--ink-soft); font-size: 13px; }
+.receipt dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; padding-top: 14px; border-top: 1px dashed #b9b2a2; font-size: 13px; }
+.receipt dt { color: var(--ink-soft); }
+.receipt dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+.receipt dd a { font-weight: 700; }
+.receipt dd a:hover { color: var(--pass); }
+.barcode { display: flex; height: 44px; margin-top: 18px; padding-top: 14px; border-top: 1px dashed #b9b2a2; justify-content: center; }
+.barcode span { background: var(--ink); height: 100%; }
+.r-txid { font-size: 10px; color: var(--ink-soft); text-align: center; margin: 6px 0 0; overflow-wrap: anywhere; }
+
+/* works / don't use */
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+h3 { font-size: 15px; margin: 0 0 12px; }
+h3.ok { color: var(--ok); } h3.bad { color: var(--bad); }
+h3 span { color: var(--muted); font-weight: 400; font-size: 13px; }
+.cols ul { list-style: none; margin: 0; padding: 0; }
+.cols li { border-top: 1px solid var(--line); }
+.cols li > span, .cols summary { display: flex; gap: 10px; padding: 10px 0; font-size: 15px; }
+.cols summary { cursor: pointer; list-style: none; }
+.cols summary::-webkit-details-marker { display: none; }
+.cols summary:hover { color: var(--zec); }
+.mark { flex: none; width: 1em; font-weight: 800; }
+.ok .mark, #works .mark { color: var(--ok); }
+#broken .mark { color: var(--bad); }
+.why { display: block; color: var(--muted); font-size: 13px; padding: 0 0 10px 1.6em; margin-top: -6px; }
+.cols pre { margin: 0 0 12px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; font: 12px/1.5 var(--mono); overflow-x: auto; }
+
+.how ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; counter-reset: s; }
+.how li { counter-increment: s; color: var(--muted); font-size: 15px; }
+.how li::before { content: counter(s); display: block; font: 800 28px var(--mono); color: var(--zec); margin-bottom: 6px; }
+.how b { color: var(--text); }
+
+footer { color: var(--muted); font-size: 13px; padding-bottom: 64px; }
+footer p { margin: 0 0 8px; max-width: 46em; }
+
+@media (max-width: 620px) {
+  .cols, .how ol { grid-template-columns: 1fr; }
+  .install { flex-direction: column; }
+  .install button { padding: 12px; }
+  .r-title { margin-right: 0; margin-top: 44px; }
+}

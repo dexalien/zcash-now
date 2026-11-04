@@ -13,7 +13,9 @@
  *             1 TAZ/day (Fauzec), so these are budgeted, not hourly. Running
  *             them on a schedule would drain the wallet and then report red
  *             for lack of funds rather than for a real regression, which
- *             would make this project lie.
+ *             would make this project lie. headless-send sends to itself, so
+ *             a run costs only the fee; it still only runs when asked
+ *             (--spend or ZCASH_NOW_SPEND=1) from a machine that holds the wallet.
  *   human   - needs a person to approve in a wallet UI. Cannot be scheduled.
  */
 
@@ -63,6 +65,12 @@ export interface Receipt {
   toolVersions?: Record<string, string>;
   detail?: string;
   error?: string;
+  /**
+   * Copied from an earlier run that this run did not repeat (a spend on a
+   * read-only schedule). ranAt keeps the original time, so nothing looks
+   * fresher than it is.
+   */
+  carried?: boolean;
 }
 
 export const RECIPES: Recipe[] = [
@@ -240,6 +248,62 @@ const txid = await wallet.zcash.sendTransaction({
       "make and would not make with a real user's payment.",
     rules: ["pool-vs-protocol", "no-ironwood-receiver"],
   },
+  {
+    id: "headless-send",
+    task: "Send a shielded payment with a memo from a script, no wallet UI",
+    aliases: [
+      "headless", "script", "cli", "backend", "server-side send", "automate",
+      "zcash-devtool", "devtool", "send with memo", "memo", "bot", "agent payment",
+    ],
+    cost: "spend",
+    code: `# zcash-devtool built from git (Ironwood/NU7 line). Signs locally, no UI.
+git clone https://github.com/zcash/zcash-devtool && cd zcash-devtool
+cargo build --release
+B=target/release/zcash-devtool
+
+# Once: a testnet wallet. The seed is encrypted to an age identity.
+$B wallet -w ./wallet init --name demo -i ./wallet/identity.txt -n test
+$B wallet -w ./wallet list-addresses      # fund this utest1... address
+
+# Every run. -s zecrocks is testnet.zec.rocks:443 for a testnet wallet;
+# add --connection tor to hide your IP from the light-wallet server.
+$B wallet -w ./wallet sync -s zecrocks
+$B wallet -w ./wallet send -i ./wallet/identity.txt \\
+  --address utest1... --value 10000 --memo "order-1042" -s zecrocks
+# prints the txid as its last line`,
+    proves:
+      "A shielded payment with a memo, signed and broadcast by a script with no " +
+      "human in the loop, returning a txid that verify-txid confirms over gRPC.",
+    leaks:
+      "On chain: nothing about amount, sender or receiver; the memo is " +
+      "encrypted. Off chain: testnet.zec.rocks sees the runner's IP and the " +
+      "moment it broadcasts, unless ZCASH_NOW_CONNECTION=tor routes it over " +
+      "Tor. The runner holds a testnet seed, which is a trust cost we accept " +
+      "for testnet only. Publishing the txid links this payment to this " +
+      "project, by choice.",
+    rules: ["pool-vs-protocol", "no-ironwood-receiver"],
+  },
+  {
+    id: "read-memo",
+    task: "Receive a shielded payment and read its memo",
+    aliases: [
+      "read memo", "receive memo", "decrypt memo", "incoming memo",
+      "list transactions", "sync wallet", "check payment arrived",
+    ],
+    cost: "read",
+    code: `$B wallet -w ./wallet sync -s zecrocks
+$B wallet -w ./wallet list-tx
+# Each transaction prints its txid, "Mined: <height>" and every output's memo,
+# decrypted locally. Use the text mode: --mode csv omits sends to yourself.`,
+    proves:
+      "The memo sent by headless-send was mined, found by trial decryption " +
+      "and decrypted locally with the wallet's own keys.",
+    leaks:
+      "The light-wallet server sees the runner's IP and when it syncs. It " +
+      "serves the same compact blocks to everyone, so it does not learn which " +
+      "transactions are ours. The memo never leaves the machine.",
+    rules: ["payment-lifecycle"],
+  },
 ];
 
 export const recipe = (id: string): Recipe | undefined =>
@@ -256,6 +320,7 @@ const OUTBOUND = /\b(send|sending|spend|spending|pay|paying|transfer|broadcast|o
 const DIRECTION: Partial<Record<string, "in" | "out">> = {
   "payment-request": "in",
   "shielded-send": "out",
+  "headless-send": "out",
 };
 
 /** Match a free-text task against the recipe list. */

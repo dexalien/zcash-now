@@ -8,7 +8,8 @@ work.
 It ships as an MCP server, so an AI coding agent can ask what is true right now
 rather than repeating what was true before NU6.3.
 
-Current receipts: [STATUS.md](./STATUS.md) · raw: [receipts.json](./receipts.json)
+Current receipts: [STATUS.md](./STATUS.md) · raw: [receipts.json](./receipts.json) ·
+history: [receipts-history.jsonl](./receipts-history.jsonl) · status page: `public/` (deployed on Vercel)
 
 ## The problem
 
@@ -98,6 +99,14 @@ holding the viewing key.
 
 ### Install
 
+One command, for Claude Code:
+
+```bash
+claude mcp add zcash-now -- npx -y github:dexalien/zcash-now
+```
+
+`prepare` runs `tsc`, so installing from git builds it. Or from a clone:
+
 ```bash
 npm install && npx tsc
 ```
@@ -116,6 +125,33 @@ Run the recipes yourself:
 
 ```bash
 node dist/runner.js        # writes receipts.json and STATUS.md
+```
+
+## Headless shielded send
+
+The one recipe most worth re-running was the one that could not run unattended:
+Noir Wallet asks a person to approve every spend. `headless-send` closes that
+gap with [`zcash-devtool`](https://github.com/zcash/zcash-devtool), built from
+git, which is on the Ironwood/NU7 line of `zcash_client_backend` and signs
+locally with no UI. Every subcommand and flag in [`src/devtool.ts`](./src/devtool.ts)
+was read from its source at the commit each receipt records.
+
+- It **sends to its own unified address**, so a run costs the fee
+  (1000 zatoshi per logical action, as the server reports) and the value comes
+  straight back. A spend stops being a drain on the faucet budget.
+- `read-memo` then syncs until the transaction is mined and the memo decrypts
+  locally, and `verify-txid` confirms the same txid over gRPC, independently of
+  the wallet that sent it.
+- `ZCASH_NOW_CONNECTION=tor` routes the wallet through zcash-devtool's built-in
+  Tor client, so the light-wallet server does not see the runner's IP.
+- Spending is opt-in per run and only from a machine that holds a testnet
+  wallet. The scheduled GitHub runner holds no wallet: it re-runs the free
+  recipes, carries the last spend receipt forward (marked `carried`) and
+  re-verifies its txid on chain every hour.
+
+```bash
+export ZCASH_DEVTOOL_DIR=../zcash-devtool ZCASH_NOW_WALLET_DIR=../wallet
+npm run spend   # free recipes, then headless-send -> read-memo -> verify-txid
 ```
 
 ## Recipes are split by what they cost
@@ -257,8 +293,10 @@ Built in one day. The honest shape of it:
   8/8 forward and inverse, length limits rejected, and all 60 unified-address
   vectors decoded with every receiver recovered exactly. Run it yourself with
   `node test/f4jumble.test.mjs` and `node test/address.test.mjs`.
-- The shielded send works and is the source of the sealed txid, but it needs a
-  person to approve it, so it is not part of the scheduled run.
+- The shielded send works two ways: approved by a person in Noir Wallet, or
+  headless through zcash-devtool (`headless-send`). Only the headless one can be
+  repeated without a person, and it runs on demand rather than on the hourly
+  schedule, because the scheduled runner deliberately holds no wallet.
 - Both lints are pattern matching. They find the known cases and say so; they
   are not a review.
 
