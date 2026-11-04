@@ -9,55 +9,102 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Print and rubber-stamp effects. Inline so the page loads nothing third-party. -->
+  <svg class="defs" aria-hidden="true" focusable="false">
+    <filter id="ink" x="-2%" y="-2%" width="104%" height="104%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="4" result="grain"/>
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="0.9" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+      <feGaussianBlur in="rough" stdDeviation="0.22"/>
+    </filter>
+    <filter id="crumple" x="-3%" y="-1%" width="106%" height="102%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.014" numOctaves="2" seed="21" result="warp"/>
+      <feDisplacementMap in="SourceGraphic" in2="warp" scale="7" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rubber" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="11" result="noise"/>
+      <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.7 1.6" result="holes"/>
+      <feComposite in="SourceGraphic" in2="holes" operator="in" result="speckled"/>
+      <feTurbulence type="turbulence" baseFrequency="0.035" numOctaves="2" seed="2" result="warp"/>
+      <feDisplacementMap in="speckled" in2="warp" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
+
   <main>
     <section class="hero">
       <p class="brand">zcash-now</p>
-      <h1>Zcash changed.<br>Your AI didn't.</h1>
+      <h1>Zcash changed.<br>Your AI <em>didn't.</em></h1>
       <p class="lede">An MCP server that gives your coding agent <strong>only Zcash code that worked on-chain today</strong>, with the txid to prove it.</p>
 
-      <div class="install">
-        <code id="cmd">claude mcp add zcash-now -- npx -y github:dexalien/zcash-now</code>
-        <button id="copy-cmd" type="button">Copy</button>
+      <div class="printer" id="printer">
+        <div class="body">
+          <span class="led" id="led" aria-hidden="true"></span>
+          <code id="cmd">claude mcp add zcash-now -- npx -y github:dexalien/zcash-now</code>
+          <button id="copy-cmd" type="button">Copy</button>
+        </div>
+        <div class="mouth" aria-hidden="true"><span class="plate">ZN-7 · SHIELDED RECEIPT UNIT · NU7</span></div>
+        <div class="feed">
+          <article class="ticket" id="ticket" aria-label="Latest on-chain proof">
+            <div class="paper">
+              <div class="print">
+                <header>
+                  <p class="t-brand">*** ZCASH-NOW ***</p>
+                  <p>PROOF OF A WORKING RECIPE</p>
+                  <p id="t-net">NU7 TESTNET</p>
+                  <p id="t-date"></p>
+                </header>
+                <p class="t-item">SHIELDED PAYMENT + MEMO<br><span>sent by a script · no human</span></p>
+                <dl id="t-lines"></dl>
+                <p class="t-total"><span>RESULT</span><span id="t-result">…</span></p>
+                <div class="barcode" id="barcode" aria-hidden="true"></div>
+                <p class="t-txid" id="t-txid"></p>
+                <p class="t-thanks">THANK YOU FOR NOT TRUSTING US<br><a id="t-verify" target="_blank" rel="noopener noreferrer">VERIFY ON-CHAIN ↗</a></p>
+              </div>
+
+              <svg class="seal" id="seal" viewBox="0 0 160 160" aria-hidden="true">
+                <defs><path id="ring" d="M80,80 m-59,0 a59,59 0 1,1 118,0 a59,59 0 1,1 -118,0"/></defs>
+                <g filter="url(#rubber)">
+                  <circle cx="80" cy="80" r="75" fill="none" stroke="currentColor" stroke-width="4.5"/>
+                  <circle cx="80" cy="80" r="69" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                  <circle cx="80" cy="80" r="46" fill="none" stroke="currentColor" stroke-width="2.2"/>
+                  <text class="ring-text" fill="currentColor"><textPath href="#ring" textLength="368" lengthAdjust="spacing">VERIFIED ON-CHAIN · ZCASH NU7 · SHIELDED ·</textPath></text>
+                  <!-- the ZEC mark: a Z with a stroke through top and bottom -->
+                  <path d="M71 43h18L71 59h18M80 38v5M80 59v5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="square" stroke-linejoin="miter"/>
+                  <rect x="6" y="68" width="148" height="30" fill="currentColor"/>
+                  <text x="80" y="91" text-anchor="middle" class="seal-pass">PASS</text>
+                  <text x="80" y="113" text-anchor="middle" class="seal-block" fill="currentColor" id="seal-block"></text>
+                </g>
+              </svg>
+            </div>
+          </article>
+        </div>
       </div>
       <p class="alt">No MCP? Point any agent at <a href="llms.txt">llms.txt</a>.</p>
     </section>
 
-    <section class="proof" aria-labelledby="proof-h">
-      <h2 id="proof-h" class="label">Latest proof</h2>
-      <article class="receipt" id="receipt">
-        <div class="stamp" id="stamp">…</div>
-        <p class="r-title">Shielded payment with a memo,<br>sent by a script. No human.</p>
-        <dl id="r-lines"></dl>
-        <div class="barcode" id="barcode" aria-hidden="true"></div>
-        <p class="r-txid" id="r-txid"></p>
-      </article>
-    </section>
-
     <section class="truth" aria-labelledby="truth-h">
-      <h2 id="truth-h" class="label">What's true on Zcash today</h2>
-      <div class="cols">
-        <div>
-          <h3 class="ok">Works <span id="works-meta"></span></h3>
-          <ul id="works"></ul>
+      <div class="board">
+        <div class="board-head">
+          <span class="live" id="live"><span class="dot"></span>LIVE</span>
+          <h2 id="truth-h">What's true on Zcash today</h2>
+          <span class="tick" id="tick"></span>
         </div>
-        <div>
-          <h3 class="bad">Don't use</h3>
-          <ul id="broken"></ul>
-        </div>
+        <ul class="rows" id="rows"></ul>
       </div>
     </section>
 
-    <section class="how" aria-label="How it works">
-      <ol>
-        <li><b>Run.</b> Every recipe runs against NU7 testnet.</li>
-        <li><b>Stamp.</b> Each result keeps its block and txid.</li>
-        <li><b>Serve.</b> Your agent only gets what passed.</li>
+    <section class="how" aria-labelledby="how-h">
+      <h2 id="how-h" class="label">How it works</h2>
+      <ol class="steps">
+        <li><span class="n">01</span><b>Run</b><span>Every recipe runs against NU7 testnet.</span></li>
+        <li><span class="n">02</span><b>Stamp</b><span>Each result keeps its block and txid.</span></li>
+        <li><span class="n">03</span><b>Serve</b><span>Your agent only gets what passed.</span></li>
       </ol>
     </section>
 
     <footer>
       <p>Shielded on-chain: amounts, sender and receiver stay private. The light-wallet server sees our runner's IP. This page loads no third-party scripts, fonts or trackers.</p>
-      <p class="links"><a href="https://github.com/dexalien/zcash-now">GitHub</a> · <a href="receipts.json">receipts.json</a> · <a href="llms.txt">llms.txt</a> · Free Society Hack 2026</p>
+      <p class="links"><a href="https://github.com/dexalien/zcash-now">GitHub</a> · <a href="receipts.json">receipts.json</a> · <a href="llms.txt">llms.txt</a></p>
+      <p class="credits">Built at Free Society Hack 2026 by <a id="by-victor" href="https://github.com/victxx" target="_blank" rel="noopener noreferrer">Victor</a> &amp; <a id="by-dex" href="https://github.com/dexalien" target="_blank" rel="noopener noreferrer">Dex</a></p>
     </footer>
   </main>
   <script src="app.js" type="module"></script>
