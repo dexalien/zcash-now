@@ -4,16 +4,16 @@ Every row was produced by running the recipe, not by asserting it works.
 A grey row says what is missing instead of claiming a pass.
 
 - Checked against: `testnet.zec.rocks:443`
-- Chain height at the time: 4581911
-- Generated: 2026-11-04T11:31:29.731Z
+- Chain height at the time: 4581920
+- Generated: 2026-11-04T11:35:32.841Z
 
 | | Recipe | Cost | Proof | Detail |
 |---|---|---|---|---|
-| green | `chain-status` | read | block 4581911 | tip 4581911, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1 |
-| green | `standard-fee` | read | block 4581911 | 1000 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee) |
-| green | `payment-request` | pure | block 4581911 | round-tripped and rejected 5 invalid URIs |
-| grey | `verify-txid` | read | block 4581911 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
-| grey | `shielded-send` | human | block 4581911 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
+| green | `chain-status` | read | block 4581920 | tip 4581920, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1 |
+| green | `standard-fee` | read | block 4581920 | 1000 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee) |
+| green | `payment-request` | pure | block 4581920 | round-tripped and rejected 5 invalid URIs |
+| grey | `verify-txid` | read | block 4581920 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
+| grey | `shielded-send` | human | block 4581920 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
 
 ## Reading this
 

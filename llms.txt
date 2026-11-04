@@ -1,0 +1,307 @@
+# Zcash, as of 2026-11-04
+
+> Current Zcash consensus and tooling facts for writing code that runs today.
+> Rules changed under NU6.3 (Ironwood) and NU7 in ways that are absent from
+> most training data and from documents written earlier in 2026. If you are
+> writing Zcash code, read this before you write it.
+
+Generated from the fact base of https://github.com/dexalien/zcash-now, which
+re-runs its recipes against live testnet. Facts checked on 2026-11-04, against testnet block 4581920.
+
+## Read this first
+
+- **Ask the chain, do not assume.** Network, tip height, consensus branch id
+  and the standard fee are all readable from a light-wallet server. Hardcoding
+  any of them is how code goes stale. Testnet: `testnet.zec.rocks:443`.
+- **Orchard is sealed.** Since NU6.3 no transaction may create new Orchard
+  outputs. New shielded value goes to the Ironwood pool. Any guide that says
+  "use Orchard" predates this.
+- **There is no Ironwood receiver type.** Typecode 0x03 is still named Orchard
+  and is how Ironwood funds are received. Do not look for an Ironwood typecode;
+  there isn't one.
+- **Let the SDK compute fees.** ZIP 317. The server currently reports 1000
+  zatoshi per logical action, and that number is not yours to pin down.
+- **A payment is seen, then mined, then confirmed.** NU7 targets 25-second
+  blocks, which is a target, not a settlement guarantee.
+
+## Network upgrades
+
+NU6.3 "Ironwood" - ZIP 258, Final
+  mainnet activated at block 3428143 on 2026-07-28
+  A soundness flaw in the Orchard proof circuit could have allowed creating counterfeit ZEC with no on-chain trace. NU6.3 seals Orchard and introduces the Ironwood pool behind a turnstile that caps withdrawals to verifiable deposits.
+
+NU7 - ZIP 259, Proposed (ZIP 254 was Withdrawn; do not cite it)
+  testnet activated at block 4465026 on 2026-10-06
+  mainnet height 3543405, decided 2026-10-20 in https://github.com/zcash/zips/pull/1405
+  estimated activation 2026-11-06T00:45Z/2026-11-06T02:35Z
+
+  Material written before 2026-10-20 says "Mainnet activation isn't scheduled yet".
+  That is no longer true.
+
+## Rules that can cost funds
+
+### pool-vs-protocol  [funds, privacy, invalid]
+
+After NU6.3 activation, never send to an external Orchard-*pool* receiver, including the wallet's own; instead pay external Orchard-*protocol* receivers into the Ironwood pool.
+
+Why this is got wrong: The distinction is one word and it decides whether a payment is valid. ZIP 326 lists getting it wrong as potential loss of funds, and as a privacy leak: a holder of the receiver's ivk can decrypt the note.
+
+Source: https://zips.z.cash/zip-0326 | https://zips.z.cash/zip-2006
+
+### must-understand-metadata  [funds, invalid]
+
+Unified address metadata typecodes 0xE0 (expiry height), 0xE1 (expiry time) and the unassigned range 0xE2..=0xFC are MUST-understand: a parser that does not understand them must reject the whole address. Revision 0 addresses must not contain them at all.
+
+Why this is got wrong: The natural reflex is to ignore unknown items, which is correct only for non-MUST-understand items. An ignoring parser silently accepts expired addresses.
+
+Source: https://zips.z.cash/zip-0316
+
+## Other rules that make code wrong
+
+### no-ironwood-receiver  [invalid]
+
+There is no Ironwood receiver type, no Ironwood address format and no Ironwood encoding. Typecode 0x03 is still named Orchard, and the same incoming viewing key scans both the Orchard and Ironwood pools, because receivers are scoped to the Orchard *protocol*, not to a pool.
+
+Why this is got wrong: Code that looks for an Ironwood receiver to decide whether an address can receive shielded funds will never find one, and will reject valid addresses. The Orchard receiver is how Ironwood funds are received after NU6.3.
+
+Source: https://zips.z.cash/zip-0326 | https://zips.z.cash/zip-0316
+
+### expiry-120-not-40  [invalid, stale]
+
+From NU7 activation a transaction expires 120 blocks after its target height, not 40.
+
+Why this is got wrong: Every pre-NU7 example hardcodes 40. Repeating it changes when the transaction stops being mineable.
+
+Source: https://github.com/zcash/librustzcash/blob/main/zcash_client_backend/CHANGELOG.md (zcash_client_backend 0.25.0, 2026-10-21)
+
+### v4-disallowed  [invalid, stale]
+
+NU7 disallows version 4 transactions (ZIP 2003).
+
+Why this is got wrong: Tutorials and libraries that still build v4 produce transactions that cannot be mined once NU7 is active.
+
+Source: https://zips.z.cash/zip-2003
+
+### six-hrps-not-one  [invalid]
+
+Unified addresses do not all start with u or utest. Revision 0 uses u (mainnet) and utest (testnet). Revision 2 adds zu and zutest for shielded-only addresses, which must not contain transparent items, and tu and tutest for transparent-enabled ones.
+
+Why this is got wrong: Validators written as a startsWith check on u1 or utest1 reject valid Revision 2 addresses.
+
+Source: https://zips.z.cash/zip-0316
+
+### orchard-sealed  [stale]
+
+Orchard is sealed: NU6.3 prevents transactions from creating new Orchard outputs. Migration to Ironwood is one-way, user-initiated, has no deadline, and spends exactly one Orchard note to produce exactly one Ironwood output (ZIP 318).
+
+Why this is got wrong: Guides that say to use Orchard predate NU6.3. Funds do not migrate on their own.
+
+Source: https://zips.z.cash/zip-0318 | https://zips.z.cash/zip-2006
+
+### let-the-sdk-compute-fees  [invalid, stale]
+
+Fees follow ZIP 317, whose Revision 1 (NU6.3) is Active. A proposal targeting NU6.3 or later counts one action per Orchard spend or output. Ask the SDK, or the light-wallet server's GetStandardFee; do not hardcode.
+
+Why this is got wrong: Hardcoded fees were already wrong before NU6.3. ZIP 2009 (marginal fee 1000 zatoshis, weight ratio cap 10) is Proposed, non-consensus, and NOT part of NU7 -- citing it as an NU7 rule is a common error.
+
+Source: https://zips.z.cash/zip-0317 | https://zips.z.cash/zip-2009 | https://github.com/zcash/librustzcash/blob/main/zcash_client_backend/CHANGELOG.md (0.24.0, 2026-08-18)
+
+### dummy-output-ciphertexts  [privacy]
+
+When rebalancing within the Orchard pool, a dummy output's enc_ciphertext must be filled with random bytes.
+
+Why this is got wrong: Using a real ciphertext on a dummy output lets anyone holding the receiver's ivk link a spend to an address.
+
+Source: https://zips.z.cash/zip-0326
+
+### payment-lifecycle  [invalid]
+
+Treat a payment as seen, then mined, then confirmed. NU7 targets 25-second block spacing (ZIP 218, Proposed), which is a target, not a promise that a payment is done in 25 seconds.
+
+Why this is got wrong: Code that reports success on first sight of a transaction reports success too early.
+
+Source: https://zips.z.cash/zip-0218
+
+## Does this tool work today
+
+- **@noir-wallet/sdk** - HUMAN-GATED: Browser-extension wallet. Sends real shielded testnet payments and returns a txid.
+  Published on npm at 0.1.9. Browser-only, wraps window.noirwallet. sendTransaction({to, amount, memo, fundingSource: shielded}) returns a txid but requires human approval, so it cannot run headless. Testnet is a SEPARATE extension loaded unpacked: use the -testnet.zip asset from v1.0.39 or v1.0.40-beta. The v2.0.0-beta release ships no testnet zip. switchNetwork() always throws.
+- **zcash/lightwallet-protocol** - WORKS: The gRPC service definition for light-wallet servers: CompactTxStreamer, 21 methods.
+  service.proto and compact_formats.proto, tagged v0.6.0. GetLightdInfo returns chainName, consensusBranchId and blockHeight, which is how you ask the chain what it is instead of hardcoding it. GetTaddressTxids is deprecated in favour of GetTaddressTransactions, and GetBlockNullifiers in favour of GetBlockRange with poolTypes.
+- **librustzcash (zcash_client_backend)** - WORKS: The reference Rust implementation. Ironwood and NU7 are implemented.
+  0.24.0 (2026-08-18) added ShieldedPool naming Ironwood alongside Sapling and Orchard, ChangeValue::ironwood, Ironwood tracked as a distinct pool, and a zip318 module. 0.25.0 (2026-10-21) changed expiry to 120 blocks after target height when NU7 is active.
+- **zingolib** - NEEDS-TOOLCHAIN: Rust wallet library. The plausible path to headless shielded sending.
+  8.0.0, pins zcash_client_backend =0.25.0, so it is on the Ironwood and NU7 line. Also ships zingo-nym-proxy-ffi for network privacy. Build from git: the zingo-cli published on crates.io is 0.5.0 while zingolib is 8.0.0, so the published CLI is stale.
+- **zcash-devtool** - NEEDS-TOOLCHAIN: Stateless CLI wallet for prototyping.
+  Not published on crates.io and ships no binaries: cargo run only. Its own README says DO NOT USE THIS IN PRODUCTION and never mentions NU7 or Ironwood. Testnet via -n test.
+- **@chainsafe/webzjs-wallet (WebZjs)** - BROKEN: Browser wallet via WASM.
+  Not published on npm, and no Ironwood support. Building it needs Rust nightly, wasm-pack, just, yarn and a gRPC-web proxy. Do not build on it for NU7.
+- **zecli / zcli** - BROKEN: CLI wallet.
+  zecli 0.6.0 on crates.io makes Orchard-only addresses, which cannot receive funds. zcli is a 0.0.0 placeholder. The git version of zcli needs a zidecar server and none is hosted for testnet.
+- **zallet / zecd** - BROKEN: Server-side wallet with RPC.
+  No NU7 release. zallet on crates.io is a 0.0.0 placeholder.
+- **@zcash/sdk** - BROKEN: TypeScript payment-link and QR layer.
+  Recommended in circulating material but not published on npm. Implement ZIP 321 directly instead; it is a URI spec.
+- **@frontiercompute/zcash-mcp** - WORKS: An existing Zcash MCP server, 28 tools, oriented to ZAP1 attestations and receipts.
+  Published at 1.4.0. Complementary, not overlapping: it declares it is not a wallet MCP and excludes keys, balance scanning and shielded spend construction. It needs a Zebra node and the ZAP1 API, and mentions none of NU7, NU6.3, Ironwood or Orchard.
+
+## Recipes, with receipts
+
+A recipe described without a receipt has not been run. Cost says how often it
+can be: read is free, pure needs no network, spend consumes testnet funds and
+is budgeted, human needs a person to approve it in a wallet.
+
+### chain-status  (read)
+
+Find out which chain I am on and whether NU7 is active
+
+Proves: The light-wallet server answers, and NU7 activation is decided against the height the chain reports rather than a constant in the code.
+Receipt: pass, block 4581920, tip 4581920, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1
+
+```ts
+import { chainStatus } from "zcash-now/chain";
+
+const s = await chainStatus();
+console.log(s.network, s.height, s.consensusBranchId, s.nu7.active);
+```
+
+### standard-fee  (read)
+
+Get the current fee instead of hardcoding one
+
+Proves: The fee comes from the server. A constant written today can be wrong tomorrow, and ZIP 317 Revision 2 is still Proposed.
+Receipt: pass, block 4581920, 1000 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee)
+
+```ts
+import { getStandardFee } from "zcash-now/chain";
+
+const r = await getStandardFee();
+// estimatorVersion 0 means the static ZIP 317 marginal fee.
+// UNIMPLEMENTED is a valid answer: let the SDK compute the fee instead.
+console.log(r.available ? r.fee : r.reason);
+```
+
+### payment-request  (pure)
+
+Ask for a shielded payment with an order ID in the memo
+
+Proves: The URI satisfies the thirteen ZIP 321 validation rules and survives a round trip, including base64url memo encoding with no padding.
+Receipt: pass, block 4581920, round-tripped and rejected 5 invalid URIs
+
+```ts
+import { build, parse } from "zcash-now/zip321";
+
+const uri = build([{
+  address: "utest1...",
+  amount: "0.125",
+  memo: "order-1042",
+  label: "Example Shop",
+}], { network: "test" });
+
+// Round-trip it: a URI you cannot parse is a URI a wallet may reject.
+const back = parse(uri, { network: "test" });
+console.log(uri, back.ok, back.payments[0].memo?.toString("utf8"));
+```
+
+### verify-txid  (read)
+
+Confirm on chain that a payment really happened
+
+Proves: The transaction exists on the chain the server is serving, read over gRPC rather than scraped from an explorer.
+Receipt: skipped, block 4581920, No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule.
+
+```ts
+import { getTransaction } from "zcash-now/chain";
+
+// The hex an explorer prints is the reverse of the bytes the gRPC call wants.
+// getTransaction handles that; doing it by hand is the usual reason a valid
+// txid "is not found".
+const tx = await getTransaction(txidHex);
+console.log("mined at height", tx.height, "bytes", tx.data.length);
+```
+
+### shielded-send  (human)
+
+Send a real shielded payment on testnet
+
+Proves: A shielded payment with a memo, broadcast to public testnet, returning a txid that verify-txid can then confirm independently.
+Receipt: skipped, block 4581920, No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule.
+
+```ts
+// Browser only. Noir Wallet testnet is a SEPARATE extension: load the
+// -testnet.zip asset from release v1.0.39 or v1.0.40-beta unpacked via
+// chrome://extensions. The v2.0.0-beta release ships no testnet zip.
+import { getNoirWallet } from "@noir-wallet/sdk";
+
+const wallet = getNoirWallet();
+if (!wallet) throw new Error("Install the Noir Wallet testnet extension");
+
+await wallet.zcash.connect();              // asks the user
+const txid = await wallet.zcash.sendTransaction({
+  to: "utest1...",
+  amount: "0.01",
+  memo: "order-1042",
+  fundingSource: "shielded",
+});                                        // asks the user again
+```
+
+## ZIPs, with their own status
+
+Status matters. A Draft and a Final are not the same claim, and ZIP 2009 is
+Proposed and non-consensus, so it is not an NU7 rule.
+
+- ZIP 258 - Deployment of the NU6.3 Network Upgrade - Final
+  https://zips.z.cash/zip-0258
+- ZIP 259 - Deployment of the NU7 Network Upgrade - Proposed
+  https://zips.z.cash/zip-0259
+- ZIP 254 - Deployment of the NU7 Network Upgrade - Withdrawn - Withdrawn. Superseded by ZIP 259. Material citing 254 is stale.
+  https://zips.z.cash/zip-0254
+- ZIP 218 - 25-second Block Target Spacing - Proposed
+  https://zips.z.cash/zip-0218
+- ZIP 2003 - Disallow version 4 transactions - Proposed
+  https://zips.z.cash/zip-2003
+- ZIP 235 - Remove 60% of Transaction Fees From Circulation - Proposed
+  https://zips.z.cash/zip-0235
+- ZIP 237 - Network Sustainability Mechanism: Halving-Preserving Issuance - Proposed
+  https://zips.z.cash/zip-0237
+- ZIP 326 - NU6.3 Consequences for Wallets - Draft - The single most important document for wallet correctness after NU6.3.
+  https://zips.z.cash/zip-0326
+- ZIP 318 - Orchard to Ironwood Migration - Draft
+  https://zips.z.cash/zip-0318
+- ZIP 2006 - Restricting Transfers into the Orchard Pool - Final
+  https://zips.z.cash/zip-2006
+- ZIP 2005 - Ironwood Quantum Recoverability - Proposed
+  https://zips.z.cash/zip-2005
+- ZIP 224 - Orchard Shielded Protocol - Final
+  https://zips.z.cash/zip-0224
+- ZIP 316 - Unified Addresses and Unified Viewing Keys - Revision 0: Active; Revision 1: Withdrawn; Revision 2: Draft
+  https://zips.z.cash/zip-0316
+- ZIP 317 - Proportional Transfer Fee Mechanism - Revision 0: Active; Revision 1 (NU6.3): Active; Revision 2: Proposed
+  https://zips.z.cash/zip-0317
+- ZIP 2009 - Reduce Marginal Fee to 1000 Zatoshis and Raise the Weight Ratio Cap to 10 - Proposed - NOT part of NU7, and non-consensus. Do not describe it as an NU7 rule.
+  https://zips.z.cash/zip-2009
+- ZIP 321 - Payment Request URIs - Active
+  https://zips.z.cash/zip-0321
+- ZIP 225 - Version 5 Transaction Format - Final
+  https://zips.z.cash/zip-0225
+- ZIP 229 - Version 6 Transaction Format - Draft
+  https://zips.z.cash/zip-0229
+
+## Known-dead endpoints
+
+- lightwalletd.testnet.electriccoin.co - Dead. Retired light-wallet server.
+- testnet.lightwalletd.com - Dead. Retired light-wallet server.
+
+Use testnet.zec.rocks:443 instead.
+
+## Testnet funds
+
+- Valar - https://faucet.testnet.valargroup.dev/ - 0.125 TAZ per day per network
+- Fauzec - https://fauzec.com/ - 1 TAZ per day per address
+
+## What this file does not cover
+
+These are the known regressions, not a specification. For wallet correctness
+after NU6.3, read ZIP 326 in full: it covers key generation with use_qsk,
+scan ranges per pool, the dummy-output rules, and the pool-versus-protocol
+distinction that decides whether a payment is valid.

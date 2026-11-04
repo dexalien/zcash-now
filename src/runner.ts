@@ -22,6 +22,7 @@ import { chainStatus, getStandardFee, getTransaction, closeChain } from "./chain
 import { build, parse } from "./zip321.js";
 import { RECIPES, type Receipt } from "./recipes.js";
 import { CHECKED_ON, ENDPOINTS } from "./facts.js";
+import { renderLlmsTxt } from "./llms.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
@@ -195,6 +196,11 @@ async function main() {
 
   writeFileSync(join(ROOT, "receipts.json"), JSON.stringify(payload, null, 2) + "\n");
   writeFileSync(join(ROOT, "STATUS.md"), statusMarkdown(payload));
+  // Generated here so it carries the receipts of the run that produced it.
+  writeFileSync(
+    join(ROOT, "llms.txt"),
+    renderLlmsTxt({ blockHeight: height ?? null, receipts }),
+  );
 
   console.log(
     `\n${payload.summary.pass} pass, ${payload.summary.fail} fail, ` +
