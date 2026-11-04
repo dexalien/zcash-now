@@ -55,7 +55,7 @@ h1 {
   font-weight: 400;
   font-variation-settings: "ELSH" 50;
   font-size: clamp(36px, 8vw, 76px);
-  line-height: .98; letter-spacing: -.025em;
+  line-height: 1.1; letter-spacing: .01em; word-spacing: .04em;
   margin: 0 0 24px;
 }
 h1 em { font-style: normal; color: var(--zec); }
