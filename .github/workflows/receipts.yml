@@ -6,6 +6,16 @@ on:
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
+  # So receipts appear right after a merge, not at the next :17. The runner's
+  # own commits use GITHUB_TOKEN and so do not re-trigger this; the ignore list
+  # is a second guard against a loop.
+  push:
+    branches: [main]
+    paths-ignore:
+      - receipts.json
+      - receipts-history.jsonl
+      - STATUS.md
+      - llms.txt
 
 permissions:
   contents: write
