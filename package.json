@@ -18,7 +18,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "recipes": "node dist/runner.js"
+    "recipes": "node dist/runner.js",
+    "demo": "npx --yes serve demo -l 5173"
   },
   "dependencies": {
     "@grpc/grpc-js": "1.14.7",

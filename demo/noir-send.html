@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zcash-now · shielded send</title>
+<style>
+  :root {
+    --bg: #fbfbfa; --fg: #1a1a18; --dim: #6b6b63; --line: #e3e3dd;
+    --card: #ffffff; --ok: #1f7a4d; --bad: #a4342b; --accent: #2f5fd0;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141414; --fg: #ececea; --dim: #9a9a92; --line: #2d2d2b;
+      --card: #1c1c1b; --ok: #5fc78e; --bad: #e68b80; --accent: #8fb0ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141414; --fg: #ececea; --dim: #9a9a92; --line: #2d2d2b;
+    --card: #1c1c1b; --ok: #5fc78e; --bad: #e68b80; --accent: #8fb0ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 32px 16px 64px;
+  }
+  main { max-width: 680px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--dim); margin: 0 0 28px; font-size: 0.92rem; }
+  section {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 18px; margin-bottom: 14px;
+  }
+  h2 {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--dim); margin: 0 0 14px; font-weight: 600;
+  }
+  label { display: block; font-size: 0.8rem; color: var(--dim); margin: 12px 0 4px; }
+  input {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--line);
+    border-radius: 7px; background: var(--bg); color: var(--fg);
+    font-family: var(--mono); font-size: 0.86rem;
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button {
+    font: inherit; font-weight: 500; padding: 9px 16px; border-radius: 7px;
+    border: 1px solid var(--accent); background: var(--accent); color: #fff;
+    cursor: pointer; margin-top: 16px;
+  }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.ghost { background: transparent; color: var(--dim); border-color: var(--line); }
+  pre {
+    font-family: var(--mono); font-size: 0.78rem; white-space: pre-wrap;
+    word-break: break-all; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 7px; padding: 11px; margin: 10px 0 0; color: var(--fg);
+  }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 0.86rem; }
+  .kv dt { color: var(--dim); }
+  .kv dd { margin: 0; font-family: var(--mono); word-break: break-all; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); }
+  .note { font-size: 0.82rem; color: var(--dim); margin-top: 12px; }
+  code { font-family: var(--mono); font-size: 0.85em; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>zcash-now · shielded send</h1>
+  <p class="sub">
+    The one recipe that cannot be scheduled. Noir Wallet requires a person to
+    approve a spend, so this page exists to produce the txid that
+    <code>verify-txid</code> then confirms on chain, independently, over gRPC.
+  </p>
+
+  <section>
+    <h2>1 · Wallet</h2>
+    <div id="walletState">Looking for the Noir Wallet provider…</div>
+    <div class="row"><button id="connect" disabled>Connect</button></div>
+    <dl class="kv" id="accountInfo" hidden></dl>
+    <p class="note">
+      Testnet is a <strong>separate extension</strong>. Load the
+      <code>-testnet.zip</code> asset from release <code>v1.0.39</code> or
+      <code>v1.0.40-beta</code> unpacked via <code>chrome://extensions</code>
+      with Developer mode on. The <code>v2.0.0-beta</code> release ships no
+      testnet zip. The installed name should read “[Testnet] Noir Wallet”.
+      <code>switchNetwork()</code> is deprecated and always throws.
+    </p>
+  </section>
+
+  <section>
+    <h2>2 · Payment request</h2>
+    <label for="to">Recipient — a unified testnet address (<code>utest1…</code>)</label>
+    <input id="to" placeholder="utest1…" spellcheck="false">
+    <label for="amount">Amount in ZEC — decimal, period separator, at most 8 fractional digits</label>
+    <input id="amount" value="0.001" spellcheck="false">
+    <label for="memo">Memo — the order id. Shielded recipients only</label>
+    <input id="memo" value="zcash-now-receipt" spellcheck="false">
+    <pre id="uri">zcash:?…</pre>
+    <p class="note">
+      Built to the ZIP 321 rules: the memo is base64url with no padding, and a
+      memo on a transparent address is refused rather than dropped. The
+      authoritative implementation is <code>src/zip321.ts</code>; this page
+      mirrors the subset it needs so it can run with no build step.
+    </p>
+  </section>
+
+  <section>
+    <h2>3 · Send, and seal the receipt</h2>
+    <div class="row">
+      <button id="send" disabled>Send shielded payment</button>
+      <button id="copy" class="ghost" hidden>Copy txid</button>
+    </div>
+    <pre id="result" hidden></pre>
+    <div id="seal" hidden>
+      <p class="note">Seal it into the receipts, then re-verify it on chain:</p>
+      <pre id="sealCmd"></pre>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// ZIP 321, the subset this page needs. src/zip321.ts is authoritative.
+// ---------------------------------------------------------------------------
+const UA_HRPS = ["u", "utest", "zu", "zutest", "tu", "tutest"];
+
+function addressKind(addr) {
+  const a = (addr || "").trim();
+  if (/^zc[a-km-zA-HJ-NP-Z1-9]{93}$/.test(a)) return "sprout";
+  if (/^ztestsapling1[0-9a-z]+$/.test(a)) return "sapling";
+  if (/^zs1[0-9a-z]+$/.test(a)) return "sapling";
+  if (/^(t1|t3|tm|t2)[a-km-zA-HJ-NP-Z1-9]{33}$/.test(a)) return "transparent";
+  const sep = a.lastIndexOf("1");
+  if (sep > 0 && UA_HRPS.includes(a.slice(0, sep).toLowerCase())) return "unified";
+  return "unknown";
+}
+
+function base64urlNoPad(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function buildUri({ to, amount, memo }) {
+  const kind = addressKind(to);
+  if (!to) throw new Error("Enter a recipient address.");
+  if (kind === "sprout") throw new Error("Sprout addresses are not allowed in a ZIP 321 URI.");
+  if (kind === "unknown") throw new Error("That is not a recognised Zcash address.");
+  if (memo && kind === "transparent")
+    throw new Error("A memo on a transparent address makes the whole URI invalid.");
+  if (amount && !/^\d+(\.\d{1,8})?$/.test(amount))
+    throw new Error("Amount must be decimal ZEC with a period separator and at most 8 fractional digits.");
+
+  const parts = [`address=${to}`];
+  if (amount) parts.push(`amount=${amount}`);
+  if (memo) {
+    const encoded = base64urlNoPad(memo);
+    if (atob(encoded.replace(/-/g, "+").replace(/_/g, "/")).length > 512)
+      throw new Error("Memo exceeds the 512-byte limit.");
+    parts.push(`memo=${encoded}`);
+  }
+  return `zcash:?${parts.join("&")}`;
+}
+
+// ---------------------------------------------------------------------------
+// Wallet. The SDK wraps window.noirwallet; we fall back to the raw provider so
+// the page still works if the CDN is unreachable.
+// ---------------------------------------------------------------------------
+const $ = (id) => document.getElementById(id);
+let zcash = null;
+
+async function resolveProvider() {
+  try {
+    const mod = await import("https://esm.sh/@noir-wallet/sdk@0.1.9");
+    const wallet = mod.getNoirWallet?.();
+    if (wallet?.zcash) return { zcash: wallet.zcash, via: "@noir-wallet/sdk 0.1.9" };
+  } catch {
+    // Fall through to the injected provider.
+  }
+  if (window.noirwallet?.zcash)
+    return { zcash: window.noirwallet.zcash, via: "window.noirwallet (SDK unavailable)" };
+  return null;
+}
+
+function renderUri() {
+  try {
+    const uri = buildUri({ to: $("to").value.trim(), amount: $("amount").value.trim(), memo: $("memo").value.trim() });
+    $("uri").textContent = uri;
+    $("uri").classList.remove("bad");
+    return uri;
+  } catch (e) {
+    $("uri").textContent = e.message;
+    $("uri").classList.add("bad");
+    return null;
+  }
+}
+for (const id of ["to", "amount", "memo"]) $(id).addEventListener("input", renderUri);
+renderUri();
+
+(async () => {
+  // The extension injects asynchronously; give it a moment before giving up.
+  for (let i = 0; i < 12; i++) {
+    const found = await resolveProvider();
+    if (found) {
+      zcash = found.zcash;
+      $("walletState").innerHTML = `<span class="ok">Provider found</span> via ${found.via}`;
+      $("connect").disabled = false;
+
+      // getAccounts() never prompts, so it is safe during page init.
+      try {
+        const existing = await zcash.getAccounts();
+        if (existing) await showAccount();
+      } catch { /* not connected yet */ }
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  $("walletState").innerHTML =
+    '<span class="bad">No provider.</span> Install the [Testnet] Noir Wallet ' +
+    "extension and reload. Serve this page over http://localhost — extensions " +
+    "do not inject into <code>file://</code> pages unless you allow file access.";
+})();
+
+async function showAccount() {
+  const [addrs, bal] = await Promise.all([
+    zcash.getAddresses().catch(() => null),
+    zcash.getBalance().catch(() => null),
+  ]);
+  const dl = $("accountInfo");
+  dl.hidden = false;
+  dl.innerHTML = "";
+  const add = (k, v) => {
+    dl.insertAdjacentHTML("beforeend", `<dt>${k}</dt><dd>${v ?? "—"}</dd>`);
+  };
+  if (addrs?.shielded) add("shielded", addrs.shielded);
+  if (addrs?.transparent) add("transparent", addrs.transparent);
+  if (bal) { add("total", bal.total); add("spendable", bal.available); }
+  $("send").disabled = false;
+  if (addrs?.shielded && !$("to").value.trim()) { $("to").value = addrs.shielded; renderUri(); }
+}
+
+$("connect").addEventListener("click", async () => {
+  $("connect").disabled = true;
+  try {
+    await zcash.connect();              // prompts the user
+    await showAccount();
+    $("walletState").innerHTML = '<span class="ok">Connected.</span>';
+  } catch (e) {
+    $("walletState").innerHTML = `<span class="bad">${e?.message ?? e}</span>`;
+    $("connect").disabled = false;
+  }
+});
+
+$("send").addEventListener("click", async () => {
+  if (!renderUri()) return;
+  const btn = $("send");
+  btn.disabled = true;
+  const out = $("result");
+  out.hidden = false;
+  out.textContent = "Waiting for you to approve it in the wallet…";
+  try {
+    const txid = await zcash.sendTransaction({
+      to: $("to").value.trim(),
+      amount: $("amount").value.trim(),
+      memo: $("memo").value.trim() || undefined,
+      fundingSource: "shielded",
+    });
+    const id = typeof txid === "string" ? txid : (txid?.txid ?? JSON.stringify(txid));
+    out.innerHTML =
+      `<span class="ok">Broadcast.</span>\ntxid: ${id}\n\n` +
+      "Broadcast is not settled: treat it as seen, then mined, then confirmed.";
+    $("copy").hidden = false;
+    $("copy").onclick = () => navigator.clipboard.writeText(id);
+    $("seal").hidden = false;
+    $("sealCmd").textContent =
+      `ZCASH_NOW_SEALED_TXID=${id} node dist/runner.js`;
+  } catch (e) {
+    const msg = e?.message ?? String(e);
+    out.innerHTML = `<span class="bad">${msg}</span>\n\n` +
+      "Ask the MCP server what it means: explain_error with this message.";
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
