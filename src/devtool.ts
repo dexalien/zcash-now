@@ -125,12 +125,14 @@ export async function findInHistory(
   c: DevtoolConfig,
   txid: string,
   memo: string,
-): Promise<{ minedHeight: number | null; memoFound: boolean } | null> {
+): Promise<{ minedHeight: number | null; memoFound: boolean; pools: string[] } | null> {
   const out = await wallet(c, "list-tx");
   const start = out.indexOf(txid);
   if (start < 0) return null;
   const next = out.slice(start + txid.length).search(/^[0-9a-f]{64}$/m);
   const block = out.slice(start, next < 0 ? undefined : start + txid.length + next);
   const mined = block.match(/Mined:\s*(\d+)/);
-  return { minedHeight: mined ? Number(mined[1]) : null, memoFound: block.includes(memo) };
+  // "Output 2 (Ironwood)": which pool each output landed in, as the wallet decrypted it.
+  const pools = [...new Set([...block.matchAll(/Output \d+ \((\w+)\)/g)].map((m) => m[1]))];
+  return { minedHeight: mined ? Number(mined[1]) : null, memoFound: block.includes(memo), pools };
 }

@@ -270,7 +270,9 @@ async function main() {
           const found = await findInHistory(devtool, txid, memo);
           if (found?.minedHeight && found.memoFound)
             return {
-              detail: `memo decrypted locally from the tx mined at ${found.minedHeight}, after ${attempt} sync(s)`,
+              detail:
+                `memo decrypted locally from the tx mined at ${found.minedHeight}, ` +
+                `outputs in ${found.pools.join(", ") || "unknown pool"}, after ${attempt} sync(s)`,
               txid,
             };
           await new Promise((r) => setTimeout(r, 30_000));
