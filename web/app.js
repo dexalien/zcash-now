@@ -3,6 +3,7 @@ const $ = (sel, el = document) => el.querySelector(sel);
 const STAMP = { pass: 'PASS', fail: 'FAIL', network: 'NETWORK', skipped: 'NO RECEIPT' };
 
 const data = await fetch('data.json', { cache: 'no-store' }).then((r) => r.json());
+await refreshFromRepo(data);
 
 meta($('#meta'), [
   ['NETWORK', 'testnet · NU7'],
@@ -127,4 +128,24 @@ async function copy(btn, text) {
     btn.textContent = 'SELECT + ⌘C';
   }
   setTimeout(() => (btn.textContent = 'COPY'), 1500);
+}
+
+// The deploy is a snapshot; the runner commits new receipts to main every hour.
+// /live/* is proxied by Vercel to the repo, so the visitor only ever talks to
+// this host. If it fails, the snapshot built into data.json is still honest.
+async function refreshFromRepo(d) {
+  try {
+    const [rec, hist] = await Promise.all([
+      fetch('live/receipts.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)),
+      fetch('live/receipts-history.jsonl', { cache: 'no-store' }).then((r) => (r.ok ? r.text() : '')),
+    ]);
+    if (!rec?.receipts || rec.generatedAt <= d.generatedAt) return;
+    const lines = hist.split('\n').filter(Boolean).map((l) => JSON.parse(l));
+    Object.assign(d, { generatedAt: rec.generatedAt, blockHeight: rec.blockHeight, summary: rec.summary });
+    if (lines.length) d.runs = new Set(lines.map((h) => h.ranAt.slice(0, 16))).size;
+    for (const r of d.recipes) {
+      r.receipt = rec.receipts.find((x) => x.recipeId === r.id) ?? r.receipt;
+      if (lines.length) r.history = lines.filter((h) => h.recipeId === r.id).slice(-24);
+    }
+  } catch {}
 }

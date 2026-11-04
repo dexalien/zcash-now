@@ -5,9 +5,25 @@
     {
       "source": "/(data.json|receipts.json|receipts-history.jsonl|llms.txt)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=60" },
-        { "key": "Access-Control-Allow-Origin", "value": "*" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=60"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
       ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/live/receipts.json",
+      "destination": "https://raw.githubusercontent.com/dexalien/zcash-now/main/receipts.json"
+    },
+    {
+      "source": "/live/receipts-history.jsonl",
+      "destination": "https://raw.githubusercontent.com/dexalien/zcash-now/main/receipts-history.jsonl"
     }
   ]
 }
