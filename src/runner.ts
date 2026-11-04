@@ -15,7 +15,7 @@
  * recipe that should work did not, so a scheduled run fails loudly.
  */
 
-import { writeFileSync, readFileSync } from "node:fs";
+import { writeFileSync, readFileSync, appendFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { chainStatus, getStandardFee, getTransaction, closeChain } from "./chain.js";
@@ -24,11 +24,29 @@ import { RECIPES, type Receipt } from "./recipes.js";
 import { CHECKED_ON, ENDPOINTS } from "./facts.js";
 import { renderLlmsTxt } from "./llms.js";
 import { encodeUnifiedAddress, decodeUnifiedAddress } from "./address.js";
+import { devtoolConfig, devtoolCommit, sync, ownAddress, send, findInHistory } from "./devtool.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
 
 const SEALED_TXID = process.env.ZCASH_NOW_SEALED_TXID?.trim() || "";
+/** Spending is opt-in per run, even on a machine that holds a wallet. */
+const SPEND = process.env.ZCASH_NOW_SPEND === "1";
+const SEND_ZATS = Number(process.env.ZCASH_NOW_SEND_ZATS ?? 10_000);
+
+/**
+ * The previous run's receipts. A scheduled read-only run must not erase the
+ * proof a spend run produced, so spend receipts are carried forward, marked
+ * as such, and their txid is re-verified on chain every run for free.
+ */
+const PREVIOUS: Receipt[] = (() => {
+  try {
+    return JSON.parse(readFileSync(join(ROOT, "receipts.json"), "utf8")).receipts ?? [];
+  } catch {
+    return [];
+  }
+})();
+const previous = (id: string) => PREVIOUS.find((r) => r.recipeId === id);
 
 /**
  * A unified testnet address to build the example payment request against.
@@ -77,7 +95,7 @@ function isNetworkFailure(e: any): boolean {
   const msg = String(e?.message ?? e);
   return (
     /^(14|4|UNAVAILABLE|DEADLINE_EXCEEDED)$/.test(code) ||
-    /UNAVAILABLE|DEADLINE_EXCEEDED|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|socket hang up|Could not resolve/i.test(
+    /UNAVAILABLE|DEADLINE_EXCEEDED|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|socket hang up|Could not resolve|transport error|tcp connect error|dns error/i.test(
       `${code} ${msg}`,
     ) ||
     /still syncing/i.test(msg)
@@ -98,6 +116,7 @@ function record(r: Receipt) {
 async function run<T>(
   recipeId: string,
   fn: () => Promise<{ detail: string; txid?: string }>,
+  toolVersions: Record<string, string> = versions(),
 ): Promise<void> {
   const ranAt = new Date().toISOString();
   try {
@@ -108,7 +127,7 @@ async function run<T>(
       ranAt,
       blockHeight: height,
       txid,
-      toolVersions: versions(),
+      toolVersions,
       detail,
     });
   } catch (e: any) {
@@ -118,7 +137,7 @@ async function run<T>(
       status: network ? "network" : "fail",
       ranAt,
       blockHeight: height,
-      toolVersions: versions(),
+      toolVersions,
       error:
         `${e?.code ?? ""} ${e?.message ?? e}`.trim() +
         (network
@@ -221,14 +240,79 @@ async function main() {
     };
   });
 
+  // ---- headless-send (spend) + read-memo (read) ---------------------------
+  const devtool = devtoolConfig();
+  let headlessTxid: string | undefined;
+  if (devtool && SPEND) {
+    const tv = {
+      "zcash-devtool": await devtoolCommit(devtool),
+      connection: devtool.connection,
+      server: "testnet.zec.rocks:443",
+    };
+    const memo = `zcash-now ${new Date().toISOString()}`;
+
+    await run("headless-send", async () => {
+      await sync(devtool);
+      const self = await ownAddress(devtool);
+      headlessTxid = await send(devtool, { address: self, zats: SEND_ZATS, memo });
+      return {
+        detail: `sent ${SEND_ZATS} zat to its own unified address with memo "${memo}"`,
+        txid: headlessTxid,
+      };
+    }, tv);
+
+    if (headlessTxid) {
+      const txid = headlessTxid;
+      await run("read-memo", async () => {
+        // ~25 s blocks on NU7 testnet; give it a few minutes before calling it red.
+        for (let attempt = 1; attempt <= 10; attempt++) {
+          await sync(devtool);
+          const found = await findInHistory(devtool, txid, memo);
+          if (found?.minedHeight && found.memoFound)
+            return {
+              detail: `memo decrypted locally from the tx mined at ${found.minedHeight}, after ${attempt} sync(s)`,
+              txid,
+            };
+          await new Promise((r) => setTimeout(r, 30_000));
+        }
+        throw new Error(`memo "${memo}" not found in a mined transaction after 10 syncs`);
+      }, tv);
+    }
+  } else {
+    const why = devtool
+      ? "Wallet present but spending not requested. Set ZCASH_NOW_SPEND=1."
+      : "No wallet on this runner. Spends run from a machine that holds a testnet wallet (see src/devtool.ts).";
+    for (const id of ["headless-send", "read-memo"]) {
+      const prev = previous(id);
+      if (prev?.status === "pass") record({ ...prev, carried: true });
+      else
+        record({ recipeId: id, status: "skipped", ranAt: new Date().toISOString(), blockHeight: height, detail: why });
+    }
+  }
+
   // ---- verify-txid (read) -------------------------------------------------
-  if (SEALED_TXID) {
+  // Re-checks, over gRPC and independently of the wallet that sent it, the
+  // newest txid we have: a human-approved one, this run's, or the last carried.
+  const carriedTxid = previous("headless-send")?.status === "pass" ? previous("headless-send")?.txid : undefined;
+  const verifyTxid = SEALED_TXID || headlessTxid || carriedTxid;
+  if (verifyTxid) {
     await run("verify-txid", async () => {
-      const tx = await getTransaction(SEALED_TXID);
+      const tx = await getTransaction(verifyTxid);
       const h = Number(tx.height);
       if (!(h > 0)) throw new Error(`Known to the server but not mined on the main chain.`);
-      return { detail: `txid mined at height ${h}, ${tx.data.length} bytes`, txid: SEALED_TXID };
+      return { detail: `txid mined at height ${h}, ${tx.data.length} bytes`, txid: verifyTxid };
     });
+  } else {
+    record({
+      recipeId: "verify-txid",
+      status: "skipped",
+      ranAt: new Date().toISOString(),
+      blockHeight: height,
+      detail: "No txid to verify yet: run headless-send, or set ZCASH_NOW_SEALED_TXID.",
+    });
+  }
+
+  if (SEALED_TXID) {
     record({
       recipeId: "shielded-send",
       status: "pass",
@@ -242,7 +326,7 @@ async function main() {
     });
     console.log(`[pass] shielded-send - sealed txid ${SEALED_TXID}`);
   } else {
-    for (const id of ["verify-txid", "shielded-send"])
+    for (const id of ["shielded-send"])
       record({
         recipeId: id,
         status: "skipped",
@@ -276,6 +360,20 @@ async function main() {
   };
 
   writeFileSync(join(ROOT, "receipts.json"), JSON.stringify(payload, null, 2) + "\n");
+  // One line per receipt actually produced this run: the board's history, and
+  // the evidence that it keeps running rather than being a screenshot.
+  appendFileSync(
+    join(ROOT, "receipts-history.jsonl"),
+    receipts
+      .filter((r) => !r.carried)
+      .map((r) =>
+        JSON.stringify({
+          recipeId: r.recipeId, status: r.status, ranAt: r.ranAt,
+          blockHeight: r.blockHeight ?? null, txid: r.txid ?? null,
+        }),
+      )
+      .join("\n") + "\n",
+  );
   writeFileSync(join(ROOT, "STATUS.md"), statusMarkdown(payload));
   // Generated here so it carries the receipts of the run that produced it.
   writeFileSync(
