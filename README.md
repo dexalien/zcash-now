@@ -151,7 +151,14 @@ runtime dependency, so the dependency was not worth a broken install.
   do not hand a third party a list of which transactions we care about.
 - **Prefix checks are treated as bugs.** `lint_zcash_code` flags
   `startsWith("utest1")`, because it accepts a corrupted address that fails its
-  Bech32m checksum and rejects valid Revision 2 forms.
+  Bech32m checksum and rejects valid Revision 2 forms. The ZIP 321 parser
+  practises what it preaches: it decodes unified addresses rather than
+  recognising them, so a URI whose address fails its checksum or carries
+  metadata ZIP 316 forbids ignoring is rejected as a payment request.
+- **No placeholder addresses in recipes.** The example payment request is built
+  against a unified testnet address this repository encodes, not an invented
+  string. A recipe that claims to prove something should not rest on an address
+  that could never receive anything.
 - **Source status is carried, not flattened.** A Draft ZIP and a Final ZIP are
   not the same claim, and collapsing them is how stale advice spreads.
 - **Known-bad is first-class.** `tool_status` names what is broken and why.
@@ -197,11 +204,6 @@ their own model provider.
   git — it pins `zcash_client_backend` `=0.25.0`, the Ironwood and NU7 line —
   would close this, and the wallet seed would then be a secret we hold, which
   is a trust cost worth stating in advance.
-- **`parse_payment_request` does not yet call the decoder.** `decode_address`
-  decodes unified addresses fully and is verified against the official vectors,
-  but the ZIP 321 parser still checks only the address family and network, so a
-  URI carrying an expired address passes the URI check. Wiring one to the other
-  is small and is the next commit.
 - **Amount privacy is not addressed.** A distinctive amount can identify a
   payment even when sender and receiver are shielded, and neither lint looks at
   amounts.

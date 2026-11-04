@@ -181,6 +181,53 @@ function readCompactSize(buf: Buffer, offset: number): { value: number; next: nu
   throw new Error("compactSize of 0xff is not used in a unified address.");
 }
 
+function writeCompactSize(n: number): Buffer {
+  if (n < 0xfd) return Buffer.from([n]);
+  if (n <= 0xffff) {
+    const b = Buffer.alloc(3);
+    b[0] = 0xfd;
+    b.writeUInt16LE(n, 1);
+    return b;
+  }
+  const b = Buffer.alloc(5);
+  b[0] = 0xfe;
+  b.writeUInt32LE(n, 1);
+  return b;
+}
+
+/**
+ * Encode a unified address from its receivers.
+ *
+ * Present so the decoder can be round-tripped, and so tests and recipes can
+ * use a *valid* testnet address instead of a placeholder. A recipe that claims
+ * to prove something should not rest on a made-up address.
+ */
+export function encodeUnifiedAddress(
+  receivers: Array<{ typecode: number; data: Buffer }>,
+  hrp: string,
+): string {
+  if (receivers.length === 0) throw new Error("At least one receiver is required.");
+
+  const sorted = [...receivers].sort((a, b) => a.typecode - b.typecode);
+  for (let i = 1; i < sorted.length; i++)
+    if (sorted[i].typecode === sorted[i - 1].typecode)
+      throw new Error(`Typecode 0x${sorted[i].typecode.toString(16)} appears twice.`);
+
+  const body = Buffer.concat(
+    sorted.flatMap((r) => [
+      writeCompactSize(r.typecode),
+      writeCompactSize(r.data.length),
+      r.data,
+    ]),
+  );
+
+  const padding = Buffer.alloc(16);
+  Buffer.from(hrp, "latin1").copy(padding);
+
+  const jumbled = f4jumble(Buffer.concat([body, padding]));
+  return bech32m.encode(hrp, bech32m.toWords(jumbled), F4JUMBLE_MAX_BYTES);
+}
+
 export interface DecodeOptions {
   /** Current chain height, to evaluate a 0xE0 expiry. */
   height?: number;

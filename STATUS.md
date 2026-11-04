@@ -4,16 +4,17 @@ Every row was produced by running the recipe, not by asserting it works.
 A grey row says what is missing instead of claiming a pass.
 
 - Checked against: `testnet.zec.rocks:443`
-- Chain height at the time: 4581984
-- Generated: 2026-11-04T12:07:21.428Z
+- Chain height at the time: 4582005
+- Generated: 2026-11-04T12:13:14.192Z
 
 | | Recipe | Cost | Proof | Detail |
 |---|---|---|---|---|
-| green | `chain-status` | read | block 4581984 | tip 4581984, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1 |
-| green | `standard-fee` | read | block 4581984 | 1000 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee) |
-| green | `payment-request` | pure | block 4581984 | round-tripped and rejected 5 invalid URIs |
-| grey | `verify-txid` | read | block 4581984 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
-| grey | `shielded-send` | human | block 4581984 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
+| green | `chain-status` | read | block 4582005 | tip 4582005, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1 |
+| green | `standard-fee` | read | block 4582005 | 1000 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee) |
+| green | `payment-request` | pure | block 4582005 | round-tripped and rejected 6 invalid URIs |
+| green | `decode-address` | pure | block 4582005 | round-tripped a utest unified address through Bech32m and F4Jumble, recovered typecode 0x3, and rejected 3 addresses a prefix check would accept |
+| grey | `verify-txid` | read | block 4582005 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
+| grey | `shielded-send` | human | block 4582005 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
 
 **amber is not red.** A network row means the light-wallet server or the path
 to it did not answer, which says nothing about whether the recipe works. Only a
@@ -28,6 +29,7 @@ write and easy to ignore, and this travels with the code.
 - **`chain-status`** — The light-wallet server learns your IP address and that you asked for chain state. Nothing about any wallet or address is sent.
 - **`standard-fee`** — The light-wallet server learns your IP address. The query carries no address, amount or transaction.
 - **`payment-request`** — Nothing over the network: this runs offline. But the URI itself is the leak surface. Anyone you hand it to sees the address, the amount and the memo, and a memo is readable by every holder of the viewing key, so put an opaque order id there and not a customer's name.
+- **`decode-address`** — Nothing. This is offline arithmetic on the address itself; no server is contacted and the address never leaves the process.
 - **`verify-txid`** — The light-wallet server learns your IP address and exactly which transaction you care about. That is a real disclosure, and it is why this goes to a light-wallet server over TLS instead of to a third-party explorer: one party instead of two. Routing it through Nym would remove the IP, and has not been done yet.
 - **`shielded-send`** — On chain: nothing about amount, sender or receiver, which is the point of a shielded payment. Off chain: the wallet's own light-wallet server sees your IP and the moment you broadcast, which is a timing signal. The memo is readable by every holder of the viewing key. And once the txid is published as a receipt here, this particular payment is publicly linked to this project, which is a disclosure we chose to make and would not make with a real user's payment.
 

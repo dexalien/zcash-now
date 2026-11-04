@@ -134,6 +134,31 @@ console.log(uri, back.ok, back.payments[0].memo?.toString("utf8"));`,
     rules: ["six-hrps-not-one"],
   },
   {
+    id: "decode-address",
+    task: "Check that an address is really usable, not just shaped right",
+    aliases: [
+      "validate address", "check address", "decode address", "unified address",
+      "is this address valid", "f4jumble", "bech32m", "typecode", "receivers",
+    ],
+    cost: "pure",
+    code: `import { decodeUnifiedAddress } from "zcash-now/address";
+
+// Decoding, not prefix matching. A startsWith("utest1") check accepts a
+// corrupted address and rejects valid Revision 2 forms (zu, tu).
+const d = decodeUnifiedAddress(addr, { network: "test", height: tipHeight });
+
+if (!d.valid) throw new Error(d.errors.join("; "));
+console.log(d.revision, d.canReceiveShielded, d.senderShouldUse);
+// There is no Ironwood receiver: 0x03 is Orchard, and that is the one to use.`,
+    proves:
+      "Bech32m, the F4Jumble inverse and ZIP 316 typecode parsing all agree, " +
+      "and addresses that a prefix check would wave through are rejected.",
+    leaks:
+      "Nothing. This is offline arithmetic on the address itself; no server is " +
+      "contacted and the address never leaves the process.",
+    rules: ["six-hrps-not-one", "must-understand-metadata", "no-ironwood-receiver"],
+  },
+  {
     id: "verify-txid",
     task: "Confirm on chain that a payment really happened",
     aliases: ["verify", "txid", "confirm payment", "lookup transaction", "receipt"],

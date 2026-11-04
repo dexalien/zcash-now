@@ -23,13 +23,32 @@ import { build, parse } from "./zip321.js";
 import { RECIPES, type Receipt } from "./recipes.js";
 import { CHECKED_ON, ENDPOINTS } from "./facts.js";
 import { renderLlmsTxt } from "./llms.js";
+import { encodeUnifiedAddress, decodeUnifiedAddress } from "./address.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
 
 const SEALED_TXID = process.env.ZCASH_NOW_SEALED_TXID?.trim() || "";
-/** A unified testnet address to build the example payment request against. */
-const EXAMPLE_UA = process.env.ZCASH_NOW_EXAMPLE_UA?.trim() || "utest1example";
+
+/**
+ * A unified testnet address to build the example payment request against.
+ *
+ * When none is supplied we encode one rather than using a placeholder. The
+ * parser now decodes unified addresses properly, so a made-up string would
+ * fail, and rightly: a recipe that claims to prove something should not rest
+ * on an address that could never receive anything. The receiver bytes here
+ * are deterministic filler, not a key, and nothing is ever sent to it.
+ */
+function exampleUnifiedAddress(): string {
+  const supplied = process.env.ZCASH_NOW_EXAMPLE_UA?.trim();
+  if (supplied) return supplied;
+  // Typecode 0x03 (Orchard) carries a 43-byte receiver.
+  const filler = Buffer.alloc(43);
+  for (let i = 0; i < filler.length; i++) filler[i] = (i * 7 + 11) & 0xff;
+  return encodeUnifiedAddress([{ typecode: 0x03, data: filler }], "utest");
+}
+
+const EXAMPLE_UA = exampleUnifiedAddress();
 
 function versions(): Record<string, string> {
   try {
@@ -165,11 +184,41 @@ async function main() {
       ["paramindex with a leading zero", "zcash:?address=utest1a&amount.01=1"],
       ["a double slash", "zcash://?address=utest1a"],
       ["an unknown req- parameter", "zcash:?address=utest1a&req-foo=1"],
+      [
+        "a unified address that does not decode",
+        `zcash:?address=${EXAMPLE_UA.slice(0, -4)}qqqq&amount=0.01`,
+      ],
     ];
     for (const [name, bad] of mustFail)
       if (parse(bad).ok) throw new Error(`Parser accepted ${name}, which ZIP 321 forbids.`);
 
     return { detail: `round-tripped and rejected ${mustFail.length} invalid URIs` };
+  });
+
+  // ---- decode-address (pure) ----------------------------------------------
+  await run("decode-address", async () => {
+    const d = decodeUnifiedAddress(EXAMPLE_UA, { network: "test" });
+    if (!d.valid) throw new Error(`Our own encoded address does not decode: ${d.errors.join("; ")}`);
+    if (d.revision !== "R0") throw new Error(`Expected a Revision 0 address, got ${d.revision}.`);
+    if (!d.canReceiveShielded) throw new Error("Encoded a shielded receiver but decoded none.");
+
+    // Prefix matching would accept all of these. Decoding must not.
+    const mustReject: [string, string][] = [
+      ["a corrupted checksum", EXAMPLE_UA.slice(0, -4) + "qqqq"],
+      ["a truncated address", EXAMPLE_UA.slice(0, EXAMPLE_UA.length - 12)],
+      ["a mainnet address where testnet is required", encodeUnifiedAddress(
+        [{ typecode: 0x03, data: Buffer.alloc(43, 9) }], "u")],
+    ];
+    for (const [name, bad] of mustReject)
+      if (decodeUnifiedAddress(bad, { network: "test" }).valid)
+        throw new Error(`Decoder accepted ${name}.`);
+
+    return {
+      detail:
+        `round-tripped a utest unified address through Bech32m and F4Jumble, ` +
+        `recovered typecode 0x${d.receivers[0]?.typecode.toString(16)}, and ` +
+        `rejected ${mustReject.length} addresses a prefix check would accept`,
+    };
   });
 
   // ---- verify-txid (read) -------------------------------------------------

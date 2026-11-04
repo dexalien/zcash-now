@@ -8,6 +8,8 @@
  * Spec: https://zips.z.cash/zip-0321
  */
 
+import { decodeUnifiedAddress } from "./address.js";
+
 export interface Payment {
   /** Index as it appears in the URI. The empty index is 0 here. */
   index: number;
@@ -26,6 +28,21 @@ export interface ParseResult {
   ok: boolean;
   payments: Payment[];
   errors: string[];
+}
+
+export interface Zip321Options {
+  network?: "main" | "test";
+  /**
+   * Fully decode unified addresses rather than only checking their family.
+   * On by default: a URI whose address fails its Bech32m checksum, or which
+   * carries metadata ZIP 316 forbids ignoring, is not a usable payment
+   * request, and saying otherwise is the bug this project is about.
+   */
+  deep?: boolean;
+  /** Current chain height, so an address carrying an expiry can be judged. */
+  height?: number;
+  /** Current unix time in seconds, for a time-based expiry. */
+  now?: number;
 }
 
 const MAX_ZEC = 21_000_000n;
@@ -110,6 +127,25 @@ export function addressKind(addr: string): { kind: AddressKind; network?: "main"
 
 const isShielded = (k: AddressKind) => k === "sapling" || k === "unified";
 
+/**
+ * Checks a unified address properly. Returns the reasons it is unusable, or an
+ * empty list. Only unified addresses can be decoded this way; the other
+ * families keep their shape checks above.
+ */
+function deepAddressErrors(
+  address: string,
+  kind: AddressKind,
+  opts: Zip321Options,
+): string[] {
+  if (kind !== "unified" || opts.deep === false) return [];
+  const d = decodeUnifiedAddress(address, {
+    network: opts.network,
+    height: opts.height,
+    now: opts.now,
+  });
+  return d.valid ? [] : d.errors;
+}
+
 // ---------------------------------------------------------------------------
 // Build
 // ---------------------------------------------------------------------------
@@ -126,10 +162,7 @@ export interface BuildPayment {
  * Build a ZIP 321 URI. Throws rather than emitting something a conforming
  * parser would reject.
  */
-export function build(
-  payments: BuildPayment[],
-  opts: { network?: "main" | "test" } = {},
-): string {
+export function build(payments: BuildPayment[], opts: Zip321Options = {}): string {
   if (payments.length === 0) throw new Error("At least one payment is required.");
 
   const parts: string[] = [];
@@ -158,6 +191,10 @@ export function build(
       if (errs.length) throw new Error(errs.join(" "));
     }
 
+    const deep = deepAddressErrors(p.address, kind, opts);
+    if (deep.length)
+      throw new Error(`Address ${i} does not decode: ${deep.join(" ")}`);
+
     parts.push(`address${ix}=${p.address}`);
     if (p.amount !== undefined) parts.push(`amount${ix}=${p.amount}`);
     if (p.memo !== undefined) parts.push(`memo${ix}=${encodeMemo(p.memo)}`);
@@ -173,7 +210,7 @@ export function build(
 // Parse
 // ---------------------------------------------------------------------------
 
-export function parse(uri: string, opts: { network?: "main" | "test" } = {}): ParseResult {
+export function parse(uri: string, opts: Zip321Options = {}): ParseResult {
   const errors: string[] = [];
   const raw = uri.trim();
 
@@ -261,6 +298,9 @@ export function parse(uri: string, opts: { network?: "main" | "test" } = {}): Pa
       errors.push(
         `Index ${index}: address is for ${network}net but the request targets ${opts.network}net.`,
       );
+
+    for (const e of deepAddressErrors(address, kind, opts))
+      errors.push(`Index ${index}: ${e}`);
 
     if (bucket.amount !== undefined && bucket["req-asset"] !== undefined)
       errors.push(`Index ${index}: amount and req-asset must not both be present.`);
