@@ -36,13 +36,25 @@ export interface Recipe {
   code: string;
   /** What the recipe proves when it passes. */
   proves: string;
+  /**
+   * What running this recipe gives away, and to whom. Stated per recipe
+   * because a privacy note at the bottom of a README is easy to write and
+   * easy to ignore; this travels with the code an agent is handed.
+   */
+  leaks: string;
   /** Rules from facts.ts that this recipe exists to keep honest. */
   rules: string[];
 }
 
 export interface Receipt {
   recipeId: string;
-  status: "pass" | "fail" | "skipped";
+  /**
+   * `network` is deliberately not `fail`: the light-wallet server or the path
+   * to it did not answer, which says nothing about whether the recipe works.
+   * Collapsing the two produces false reds, and a status board that cries
+   * wolf is worse than no status board.
+   */
+  status: "pass" | "fail" | "network" | "skipped";
   ranAt: string;
   /** Chain height when it ran, so the receipt is anchored in time. */
   blockHeight?: number;
@@ -66,6 +78,9 @@ console.log(s.network, s.height, s.consensusBranchId, s.nu7.active);`,
     proves:
       "The light-wallet server answers, and NU7 activation is decided against " +
       "the height the chain reports rather than a constant in the code.",
+    leaks:
+      "The light-wallet server learns your IP address and that you asked for " +
+      "chain state. Nothing about any wallet or address is sent.",
     rules: ["v4-disallowed", "expiry-120-not-40"],
   },
   {
@@ -82,6 +97,9 @@ console.log(r.available ? r.fee : r.reason);`,
     proves:
       "The fee comes from the server. A constant written today can be wrong " +
       "tomorrow, and ZIP 317 Revision 2 is still Proposed.",
+    leaks:
+      "The light-wallet server learns your IP address. The query carries no " +
+      "address, amount or transaction.",
     rules: ["let-the-sdk-compute-fees"],
   },
   {
@@ -108,6 +126,11 @@ console.log(uri, back.ok, back.payments[0].memo?.toString("utf8"));`,
     proves:
       "The URI satisfies the thirteen ZIP 321 validation rules and survives a " +
       "round trip, including base64url memo encoding with no padding.",
+    leaks:
+      "Nothing over the network: this runs offline. But the URI itself is the " +
+      "leak surface. Anyone you hand it to sees the address, the amount and " +
+      "the memo, and a memo is readable by every holder of the viewing key, " +
+      "so put an opaque order id there and not a customer's name.",
     rules: ["six-hrps-not-one"],
   },
   {
@@ -125,6 +148,12 @@ console.log("mined at height", tx.height, "bytes", tx.data.length);`,
     proves:
       "The transaction exists on the chain the server is serving, read over " +
       "gRPC rather than scraped from an explorer.",
+    leaks:
+      "The light-wallet server learns your IP address and exactly which " +
+      "transaction you care about. That is a real disclosure, and it is why " +
+      "this goes to a light-wallet server over TLS instead of to a " +
+      "third-party explorer: one party instead of two. Routing it through Nym " +
+      "would remove the IP, and has not been done yet.",
     rules: ["txid-byte-order", "payment-lifecycle"],
   },
   {
@@ -153,6 +182,14 @@ const txid = await wallet.zcash.sendTransaction({
     proves:
       "A shielded payment with a memo, broadcast to public testnet, returning " +
       "a txid that verify-txid can then confirm independently.",
+    leaks:
+      "On chain: nothing about amount, sender or receiver, which is the point " +
+      "of a shielded payment. Off chain: the wallet's own light-wallet server " +
+      "sees your IP and the moment you broadcast, which is a timing signal. " +
+      "The memo is readable by every holder of the viewing key. And once the " +
+      "txid is published as a receipt here, this particular payment is " +
+      "publicly linked to this project, which is a disclosure we chose to " +
+      "make and would not make with a real user's payment.",
     rules: ["pool-vs-protocol", "no-ironwood-receiver"],
   },
 ];

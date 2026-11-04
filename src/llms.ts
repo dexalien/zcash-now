@@ -109,9 +109,9 @@ is budgeted, human needs a person to approve it in a wallet.
 
 ${RECIPES.map(
   (r) =>
-    `### ${r.id}  (${r.cost})\n\n${r.task}\n\nProves: ${r.proves}\nReceipt: ${receiptLine(
-      r.id,
-    )}\n\n\`\`\`ts\n${r.code}\n\`\`\``,
+    `### ${r.id}  (${r.cost})\n\n${r.task}\n\nProves: ${r.proves}\nLeaks: ${
+      r.leaks
+    }\nReceipt: ${receiptLine(r.id)}\n\n\`\`\`ts\n${r.code}\n\`\`\``,
 ).join("\n\n")}
 
 ## ZIPs, with their own status

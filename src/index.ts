@@ -272,6 +272,7 @@ server.registerTool(
         }[r.cost],
         code: r.code,
         proves: r.proves,
+        leaks: r.leaks,
         receipt: describeReceipt(r.id),
         relatedRules: r.rules.map((id) => ({ id, claim: rule(id)?.claim })),
       })),

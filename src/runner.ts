@@ -48,10 +48,32 @@ function versions(): Record<string, string> {
 const receipts: Receipt[] = [];
 let height: number | undefined;
 
+/**
+ * Did the network fail, or did the recipe? Treating the first as the second is
+ * how a status board starts crying wolf, and testnet has been unstable: Zebra
+ * 7.0.0 is unreleased and operators have reported nodes that stop syncing.
+ */
+function isNetworkFailure(e: any): boolean {
+  const code = String(e?.code ?? "");
+  const msg = String(e?.message ?? e);
+  return (
+    /^(14|4|UNAVAILABLE|DEADLINE_EXCEEDED)$/.test(code) ||
+    /UNAVAILABLE|DEADLINE_EXCEEDED|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|socket hang up|Could not resolve/i.test(
+      `${code} ${msg}`,
+    ) ||
+    /still syncing/i.test(msg)
+  );
+}
+
+const MARK = { pass: "pass", fail: "FAIL", network: "net ", skipped: "skip" } as const;
+
 function record(r: Receipt) {
   receipts.push(r);
-  const mark = r.status === "pass" ? "pass" : r.status === "skipped" ? "skip" : "FAIL";
-  console.log(`[${mark}] ${r.recipeId}${r.detail ? ` - ${r.detail}` : ""}${r.error ? ` - ${r.error}` : ""}`);
+  console.log(
+    `[${MARK[r.status]}] ${r.recipeId}` +
+      (r.detail ? ` - ${r.detail}` : "") +
+      (r.error ? ` - ${r.error}` : ""),
+  );
 }
 
 async function run<T>(
@@ -71,13 +93,18 @@ async function run<T>(
       detail,
     });
   } catch (e: any) {
+    const network = isNetworkFailure(e);
     record({
       recipeId,
-      status: "fail",
+      status: network ? "network" : "fail",
       ranAt,
       blockHeight: height,
       toolVersions: versions(),
-      error: `${e?.code ?? ""} ${e?.message ?? e}`.trim(),
+      error:
+        `${e?.code ?? ""} ${e?.message ?? e}`.trim() +
+        (network
+          ? " (classified as a network condition, not a recipe failure)"
+          : ""),
     });
   }
 }
@@ -189,9 +216,14 @@ async function main() {
     summary: {
       pass: receipts.filter((r) => r.status === "pass").length,
       fail: failed.length,
+      network: receipts.filter((r) => r.status === "network").length,
       skipped: receipts.filter((r) => r.status === "skipped").length,
     },
-    receipts,
+    receipts: receipts.map((r) => ({
+      ...r,
+      // Travels with the receipt, so the disclosure is as durable as the proof.
+      leaks: RECIPES.find((x) => x.id === r.recipeId)?.leaks,
+    })),
   };
 
   writeFileSync(join(ROOT, "receipts.json"), JSON.stringify(payload, null, 2) + "\n");
@@ -202,12 +234,14 @@ async function main() {
     renderLlmsTxt({ blockHeight: height ?? null, receipts }),
   );
 
+  const s = payload.summary;
   console.log(
-    `\n${payload.summary.pass} pass, ${payload.summary.fail} fail, ` +
-      `${payload.summary.skipped} skipped at block ${height ?? "unknown"}`,
+    `\n${s.pass} pass, ${s.fail} fail, ${s.network} network, ` +
+      `${s.skipped} skipped at block ${height ?? "unknown"}`,
   );
 
   closeChain();
+  // A network condition does not fail the run. Only a recipe does.
   if (failed.length > 0) process.exitCode = 1;
 }
 
@@ -218,7 +252,7 @@ function statusMarkdown(p: {
   receipts: Receipt[];
 }): string {
   const icon = (s: Receipt["status"]) =>
-    s === "pass" ? "green" : s === "fail" ? "RED" : "grey";
+    s === "pass" ? "green" : s === "fail" ? "RED" : s === "network" ? "amber" : "grey";
 
   const rows = p.receipts.map((r) => {
     const recipe = RECIPES.find((x) => x.id === r.recipeId);
@@ -240,6 +274,18 @@ A grey row says what is missing instead of claiming a pass.
 | | Recipe | Cost | Proof | Detail |
 |---|---|---|---|---|
 ${rows.join("\n")}
+
+**amber is not red.** A network row means the light-wallet server or the path
+to it did not answer, which says nothing about whether the recipe works. Only a
+red row fails the run. Testnet has been unstable, so collapsing the two would
+make this board cry wolf, and a board that cries wolf is worse than none.
+
+## What each recipe gives away
+
+Stated per recipe, because a privacy note at the bottom of a README is easy to
+write and easy to ignore, and this travels with the code.
+
+${RECIPES.map((r) => `- **\`${r.id}\`** — ${r.leaks}`).join("\n")}
 
 ## Reading this
 
