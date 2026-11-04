@@ -10,7 +10,9 @@
   "files": [
     "dist",
     "proto",
-    "llms.txt"
+    "llms.txt",
+    "receipts.json",
+    "receipts-history.jsonl"
   ],
   "engines": {
     "node": ">=20"
