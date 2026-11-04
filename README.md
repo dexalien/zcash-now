@@ -57,7 +57,7 @@ correct either way, and a hardcoded 5000 would have been wrong today.
 
 ## Tools
 
-Twelve, over stdio.
+Fourteen, over stdio.
 
 | Tool | What it does |
 |---|---|
@@ -71,8 +71,16 @@ Twelve, over stdio.
 | `tool_status` | Whether a package works today, and why |
 | `explain_error` | Maps an error message onto its cause |
 | `lint_zcash_code` | Finds code that was correct before NU6.3/NU7 |
+| `privacy_lint` | Finds code that leaks even though it works, and says what becomes visible to whom |
+| `decode_address` | Decodes a unified address for real: Bech32m, F4Jumble inverse, ZIP 316 typecodes |
 | `payment_request` | Builds a ZIP 321 URI, refusing to emit an invalid one |
 | `parse_payment_request` | Validates a ZIP 321 URI against all thirteen rules |
+
+Two lints, because they answer different questions. `lint_zcash_code` asks
+whether the code is still correct. `privacy_lint` asks what it gives away while
+being correct: a transparent recipient works perfectly and publishes the
+payment; a memo works perfectly and carries an email address to everyone
+holding the viewing key.
 
 ### Install
 
@@ -189,11 +197,14 @@ their own model provider.
   git — it pins `zcash_client_backend` `=0.25.0`, the Ironwood and NU7 line —
   would close this, and the wallet seed would then be a secret we hold, which
   is a trust cost worth stating in advance.
-- **Address decoding is incomplete.** `parse_payment_request` checks the
-  address family and network but does not yet un-jumble a unified address, so
-  it cannot enforce the MUST-understand metadata rule it correctly tells
-  callers about. Bech32m plus F4Jumble plus typecode parsing is the fix, and
-  until it lands, this gap is reported rather than papered over.
+- **`parse_payment_request` does not yet call the decoder.** `decode_address`
+  decodes unified addresses fully and is verified against the official vectors,
+  but the ZIP 321 parser still checks only the address family and network, so a
+  URI carrying an expired address passes the URI check. Wiring one to the other
+  is small and is the next commit.
+- **Amount privacy is not addressed.** A distinctive amount can identify a
+  payment even when sender and receiver are shielded, and neither lint looks at
+  amounts.
 - **The fact base is a single maintainer's reading.** Nothing cross-checks it
   against the ZIPs automatically. A linter over the fact base against
   `zips.z.cash` would make rule 2 as self-correcting as rule 1 already is.
@@ -219,11 +230,19 @@ code correct is doing privacy work even though it never touches a key.
 
 ## Status of this work
 
-Built in one day. The honest shape of it: the read and pure recipes pass
-against live testnet and are reproducible by anyone who clones this. The
-shielded send works and is the source of the sealed txid, but it needs a human,
-so it is not yet part of the scheduled run. Unified address decoding is
-specified and reported, not implemented.
+Built in one day. The honest shape of it:
+
+- The read and pure recipes pass against live testnet and are reproducible by
+  anyone who clones this.
+- F4Jumble and unified address decoding are verified against the official
+  vectors in [zcash/zcash-test-vectors](https://github.com/zcash/zcash-test-vectors):
+  8/8 forward and inverse, length limits rejected, and all 60 unified-address
+  vectors decoded with every receiver recovered exactly. Run it yourself with
+  `node test/f4jumble.test.mjs` and `node test/address.test.mjs`.
+- The shielded send works and is the source of the sealed txid, but it needs a
+  person to approve it, so it is not part of the scheduled run.
+- Both lints are pattern matching. They find the known cases and say so; they
+  are not a review.
 
 ## Licence
 

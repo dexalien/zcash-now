@@ -19,7 +19,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "recipes": "node dist/runner.js",
-    "demo": "npx --yes serve demo -l 5173"
+    "demo": "npx --yes serve demo -l 5173",
+    "test": "node test/f4jumble.test.mjs && node test/address.test.mjs"
   },
   "dependencies": {
     "@grpc/grpc-js": "1.14.7",
