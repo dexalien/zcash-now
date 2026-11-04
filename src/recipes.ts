@@ -1,0 +1,260 @@
+/**
+ * Recipes and their receipts.
+ *
+ * A recipe is a task someone actually needs to do. A receipt is the proof
+ * that the recipe was run and what the chain said when it was. A recipe with
+ * no receipt is reported as having no receipt, never as working.
+ *
+ * Recipes are split by what they cost to run:
+ *
+ *   read    - free, so the runner re-runs them on every scheduled run.
+ *   pure    - no network at all.
+ *   spend   - consumes testnet funds. Faucets give 0.125 TAZ/day (Valar) and
+ *             1 TAZ/day (Fauzec), so these are budgeted, not hourly. Running
+ *             them on a schedule would drain the wallet and then report red
+ *             for lack of funds rather than for a real regression, which
+ *             would make this project lie.
+ *   human   - needs a person to approve in a wallet UI. Cannot be scheduled.
+ */
+
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+export const RECEIPTS_PATH = join(HERE, "..", "receipts.json");
+
+export type RecipeCost = "read" | "pure" | "spend" | "human";
+
+export interface Recipe {
+  id: string;
+  task: string;
+  /** Keywords a caller might use for this task. */
+  aliases: string[];
+  cost: RecipeCost;
+  /** Working code. Kept short enough that a reader can check it. */
+  code: string;
+  /** What the recipe proves when it passes. */
+  proves: string;
+  /** Rules from facts.ts that this recipe exists to keep honest. */
+  rules: string[];
+}
+
+export interface Receipt {
+  recipeId: string;
+  status: "pass" | "fail" | "skipped";
+  ranAt: string;
+  /** Chain height when it ran, so the receipt is anchored in time. */
+  blockHeight?: number;
+  /** Real transaction this recipe produced, where it produces one. */
+  txid?: string;
+  toolVersions?: Record<string, string>;
+  detail?: string;
+  error?: string;
+}
+
+export const RECIPES: Recipe[] = [
+  {
+    id: "chain-status",
+    task: "Find out which chain I am on and whether NU7 is active",
+    aliases: ["chain", "status", "height", "nu7 active", "which network", "branch id"],
+    cost: "read",
+    code: `import { chainStatus } from "zcash-now/chain";
+
+const s = await chainStatus();
+console.log(s.network, s.height, s.consensusBranchId, s.nu7.active);`,
+    proves:
+      "The light-wallet server answers, and NU7 activation is decided against " +
+      "the height the chain reports rather than a constant in the code.",
+    rules: ["v4-disallowed", "expiry-120-not-40"],
+  },
+  {
+    id: "standard-fee",
+    task: "Get the current fee instead of hardcoding one",
+    aliases: ["fee", "zip 317", "marginal fee", "how much does a transaction cost"],
+    cost: "read",
+    code: `import { getStandardFee } from "zcash-now/chain";
+
+const r = await getStandardFee();
+// estimatorVersion 0 means the static ZIP 317 marginal fee.
+// UNIMPLEMENTED is a valid answer: let the SDK compute the fee instead.
+console.log(r.available ? r.fee : r.reason);`,
+    proves:
+      "The fee comes from the server. A constant written today can be wrong " +
+      "tomorrow, and ZIP 317 Revision 2 is still Proposed.",
+    rules: ["let-the-sdk-compute-fees"],
+  },
+  {
+    id: "payment-request",
+    task: "Ask for a shielded payment with an order ID in the memo",
+    aliases: [
+      "zip 321", "payment link", "payment uri", "invoice", "memo", "qr",
+      "checkout", "order id", "request a payment", "take a payment",
+      "receive a payment", "get paid", "charge", "bill",
+    ],
+    cost: "pure",
+    code: `import { build, parse } from "zcash-now/zip321";
+
+const uri = build([{
+  address: "utest1...",
+  amount: "0.125",
+  memo: "order-1042",
+  label: "Example Shop",
+}], { network: "test" });
+
+// Round-trip it: a URI you cannot parse is a URI a wallet may reject.
+const back = parse(uri, { network: "test" });
+console.log(uri, back.ok, back.payments[0].memo?.toString("utf8"));`,
+    proves:
+      "The URI satisfies the thirteen ZIP 321 validation rules and survives a " +
+      "round trip, including base64url memo encoding with no padding.",
+    rules: ["six-hrps-not-one"],
+  },
+  {
+    id: "verify-txid",
+    task: "Confirm on chain that a payment really happened",
+    aliases: ["verify", "txid", "confirm payment", "lookup transaction", "receipt"],
+    cost: "read",
+    code: `import { getTransaction } from "zcash-now/chain";
+
+// The hex an explorer prints is the reverse of the bytes the gRPC call wants.
+// getTransaction handles that; doing it by hand is the usual reason a valid
+// txid "is not found".
+const tx = await getTransaction(txidHex);
+console.log("mined at height", tx.height, "bytes", tx.data.length);`,
+    proves:
+      "The transaction exists on the chain the server is serving, read over " +
+      "gRPC rather than scraped from an explorer.",
+    rules: ["txid-byte-order", "payment-lifecycle"],
+  },
+  {
+    id: "shielded-send",
+    task: "Send a real shielded payment on testnet",
+    aliases: [
+      "send", "send a payment", "pay someone", "spend", "broadcast",
+      "noir wallet", "transfer funds", "make a payment",
+    ],
+    cost: "human",
+    code: `// Browser only. Noir Wallet testnet is a SEPARATE extension: load the
+// -testnet.zip asset from release v1.0.39 or v1.0.40-beta unpacked via
+// chrome://extensions. The v2.0.0-beta release ships no testnet zip.
+import { getNoirWallet } from "@noir-wallet/sdk";
+
+const wallet = getNoirWallet();
+if (!wallet) throw new Error("Install the Noir Wallet testnet extension");
+
+await wallet.zcash.connect();              // asks the user
+const txid = await wallet.zcash.sendTransaction({
+  to: "utest1...",
+  amount: "0.01",
+  memo: "order-1042",
+  fundingSource: "shielded",
+});                                        // asks the user again`,
+    proves:
+      "A shielded payment with a memo, broadcast to public testnet, returning " +
+      "a txid that verify-txid can then confirm independently.",
+    rules: ["pool-vs-protocol", "no-ironwood-receiver"],
+  },
+];
+
+export const recipe = (id: string): Recipe | undefined =>
+  RECIPES.find((r) => r.id === id);
+
+/**
+ * Which way the money moves, which the keyword overlap alone cannot tell:
+ * "take a shielded payment" and "send a shielded payment" share almost every
+ * word and want opposite recipes.
+ */
+const INBOUND = /\b(take|taking|receive|receiving|request|requesting|ask|accept|accepting|charge|bill|invoice|collect|get paid|incoming)\b/;
+const OUTBOUND = /\b(send|sending|spend|spending|pay|paying|transfer|broadcast|outgoing)\b/;
+
+const DIRECTION: Partial<Record<string, "in" | "out">> = {
+  "payment-request": "in",
+  "shielded-send": "out",
+};
+
+/** Match a free-text task against the recipe list. */
+export function findRecipes(query: string): Recipe[] {
+  const q = query.toLowerCase().trim();
+  if (!q) return RECIPES;
+
+  // "pay me" / "pay to my address" is inbound despite containing "pay".
+  const inbound = INBOUND.test(q) || /\bpay (me|us|my|our)\b/.test(q);
+  const outbound = OUTBOUND.test(q) && !inbound;
+
+  const scored = RECIPES.map((r) => {
+    let score = 0;
+    if (r.id === q) score += 100;
+    if (r.task.toLowerCase().includes(q)) score += 50;
+    for (const a of r.aliases) {
+      if (a === q) score += 40;
+      else if (q.includes(a) || a.includes(q)) score += 15;
+    }
+    for (const word of q.split(/\s+/).filter((w) => w.length > 3)) {
+      if (r.task.toLowerCase().includes(word)) score += 8;
+      if (r.aliases.some((a) => a.includes(word))) score += 5;
+    }
+
+    // Direction decides between the two payment recipes, and only those.
+    const dir = DIRECTION[r.id];
+    if (dir && score > 0) {
+      if (inbound) score += dir === "in" ? 45 : -45;
+      else if (outbound) score += dir === "out" ? 45 : -45;
+    }
+
+    return { r, score };
+  })
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  // A clear direction with no keyword overlap still tells us what is wanted:
+  // "pay me to my utest address" shares no alias but is unambiguously inbound.
+  if (scored.length === 0 && (inbound || outbound)) {
+    const wanted = inbound ? "payment-request" : "shielded-send";
+    const r = recipe(wanted);
+    if (r) return [r];
+  }
+
+  return scored.map((s) => s.r);
+}
+
+export function loadReceipts(): Receipt[] {
+  try {
+    const parsed = JSON.parse(readFileSync(RECEIPTS_PATH, "utf8"));
+    return Array.isArray(parsed?.receipts) ? parsed.receipts : [];
+  } catch {
+    return [];
+  }
+}
+
+export function receiptFor(recipeId: string): Receipt | undefined {
+  return loadReceipts()
+    .filter((r) => r.recipeId === recipeId)
+    .sort((a, b) => (a.ranAt < b.ranAt ? 1 : -1))[0];
+}
+
+/**
+ * How a recipe should be described to a caller, given whether it has a
+ * receipt. The honest default is "no receipt yet".
+ */
+export function describeReceipt(recipeId: string): string {
+  const r = receiptFor(recipeId);
+  if (!r)
+    return (
+      "No receipt yet: this recipe has not been run by the scheduled runner. " +
+      "Treat the code as unverified."
+    );
+
+  const bits = [`${r.status} at ${r.ranAt}`];
+  if (r.blockHeight !== undefined) bits.push(`block ${r.blockHeight}`);
+  if (r.txid) bits.push(`txid ${r.txid}`);
+  if (r.toolVersions)
+    bits.push(
+      Object.entries(r.toolVersions)
+        .map(([k, v]) => `${k} ${v}`)
+        .join(", "),
+    );
+  if (r.detail) bits.push(r.detail);
+  if (r.error) bits.push(`error: ${r.error}`);
+  return bits.join(" | ");
+}

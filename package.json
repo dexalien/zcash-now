@@ -4,23 +4,32 @@
   "description": "Zcash docs that cannot lie: every recipe is re-run against NU7 testnet and stamped with the txid it produced.",
   "license": "MIT",
   "type": "module",
-  "bin": { "zcash-now": "dist/index.js" },
-  "files": ["dist", "proto", "llms.txt"],
-  "engines": { "node": ">=20" },
+  "bin": {
+    "zcash-now": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "proto",
+    "llms.txt"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "recipes": "node dist/runner.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.32.2",
     "@grpc/grpc-js": "1.14.7",
     "@grpc/proto-loader": "0.8.1",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "bech32": "2.0.0",
-    "blake2b": "2.1.4"
+    "blake2b": "2.1.4",
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "typescript": "5.9.3",
-    "@types/node": "24.10.1"
+    "@types/node": "24.10.1",
+    "typescript": "5.9.3"
   }
 }
