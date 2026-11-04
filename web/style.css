@@ -1,0 +1,172 @@
+:root {
+  --desk: #cfc8b8;
+  --desk-grain: #c4bcaa;
+  --paper: #fbf9f3;
+  --paper-edge: #ece6d8;
+  --ink: #1d1c1a;
+  --ink-soft: #6b665c;
+  --rule: #b9b2a2;
+  --pass: #1d7a4c;
+  --fail: #c2362b;
+  --network: #b06d10;
+  --pending: #8a8476;
+  --shadow: 0 1px 0 rgba(0,0,0,.04), 0 10px 24px -12px rgba(40,30,10,.35);
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --desk: #1a1916;
+    --desk-grain: #22201c;
+    --paper: #efebe0;
+    --paper-edge: #d9d3c4;
+    --shadow: 0 14px 30px -14px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"] {
+  --desk: #1a1916;
+  --desk-grain: #22201c;
+  --paper: #efebe0;
+  --paper-edge: #d9d3c4;
+  --shadow: 0 14px 30px -14px rgba(0,0,0,.8);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--desk) repeating-linear-gradient(90deg, transparent 0 3px, var(--desk-grain) 3px 4px);
+  color: var(--ink);
+  font: 14px/1.5 var(--mono);
+}
+a { color: inherit; text-underline-offset: 2px; }
+h1, h2 { margin: 0; letter-spacing: .08em; }
+h1 { font-size: 30px; text-align: center; }
+h2 { font-size: 15px; }
+.tiny { font-size: 11px; color: var(--ink-soft); letter-spacing: .04em; }
+.center { text-align: center; }
+
+.counter {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+  display: grid;
+  gap: 28px;
+}
+
+/* paper with perforated top & bottom edges */
+.ticket {
+  --tooth: 8px;
+  position: relative;
+  background: var(--paper);
+  padding: 26px 22px 24px;
+  box-shadow: var(--shadow);
+  -webkit-mask:
+    radial-gradient(circle at 50% 0, transparent 4px, #000 4.5px) top / var(--tooth) 51% repeat-x,
+    radial-gradient(circle at 50% 100%, transparent 4px, #000 4.5px) bottom / var(--tooth) 51% repeat-x;
+  mask:
+    radial-gradient(circle at 50% 0, transparent 4px, #000 4.5px) top / var(--tooth) 51% repeat-x,
+    radial-gradient(circle at 50% 100%, transparent 4px, #000 4.5px) bottom / var(--tooth) 51% repeat-x;
+}
+.ticket > * + * { margin-top: 12px; }
+.ticket p { margin-bottom: 0; }
+
+.head { text-align: center; overflow: hidden; }
+.head .tiny:first-child { margin: 0 0 6px; }
+.pitch { color: var(--ink-soft); }
+.meta, .lines { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 14px 0 0; text-align: left; }
+.meta dt, .lines dt { color: var(--ink-soft); }
+.meta dd, .lines dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+.meta, .lines, .totals { border-top: 1px dashed var(--rule); padding-top: 10px; }
+.totals { font-weight: 700; letter-spacing: .06em; }
+.totals .pass { color: var(--pass); } .totals .fail { color: var(--fail); } .totals .network { color: var(--network); }
+
+.sample-stamp {
+  position: absolute;
+  top: 30px; right: 12px;
+  transform: rotate(14deg);
+  border: 3px double var(--fail);
+  color: var(--fail);
+  padding: 4px 10px;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.1;
+  letter-spacing: .1em;
+  opacity: .8;
+}
+
+#recipes { display: grid; gap: 28px; }
+.recipe .row.top { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: var(--ink-soft); letter-spacing: .06em; }
+.recipe .title { font-size: 17px; letter-spacing: .02em; padding-right: 110px; }
+.recipe .summary { color: var(--ink-soft); font-size: 13px; }
+
+.stamp {
+  position: absolute;
+  top: 54px; right: 18px;
+  margin: 0 !important;
+  transform: rotate(-9deg);
+  border: 2.5px solid currentColor;
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: .12em;
+  color: var(--status);
+  opacity: .88;
+  mix-blend-mode: multiply;
+  background: radial-gradient(circle at 30% 40%, transparent 60%, color-mix(in srgb, var(--paper) 55%, transparent) 61%);
+}
+.recipe { --status: var(--pending); }
+.recipe[data-status="pass"] { --status: var(--pass); }
+.recipe[data-status="fail"] { --status: var(--fail); }
+.recipe[data-status="network"] { --status: var(--network); }
+.recipe[data-status="pending"] .lines, .recipe[data-status="pending"] .barcode { opacity: .35; }
+
+.lines dd.txid a { font-weight: 700; }
+.lines dd.err { color: var(--fail); text-align: left; grid-column: 1 / -1; font-size: 12px; }
+
+.history { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
+.history::before { content: "RUNS"; font-size: 11px; color: var(--ink-soft); margin-right: 6px; }
+.history i { width: 9px; height: 14px; background: var(--c); display: block; }
+.history i[data-s="pass"] { --c: var(--pass); }
+.history i[data-s="fail"] { --c: var(--fail); }
+.history i[data-s="network"] { --c: var(--network); }
+.history:empty::after { content: "none yet"; font-size: 11px; color: var(--ink-soft); }
+
+.leaks { font-size: 12px; border-left: 3px solid var(--ink); padding-left: 10px; }
+.leaks b { letter-spacing: .06em; }
+
+.code-wrap summary { cursor: pointer; font-size: 12px; letter-spacing: .08em; font-weight: 700; list-style: none; }
+.code-wrap summary::before { content: "+ "; }
+.code-wrap[open] summary::before { content: "− "; }
+.code-wrap summary::-webkit-details-marker { display: none; }
+.code { position: relative; margin-top: 10px; }
+.code pre { margin: 0; background: var(--ink); color: var(--paper); padding: 12px; font-size: 12px; overflow-x: auto; }
+.copy {
+  position: absolute; top: 6px; right: 6px;
+  font: 700 10px var(--mono); letter-spacing: .08em;
+  background: var(--paper); color: var(--ink); border: 0; padding: 4px 7px; cursor: pointer;
+}
+.copy:focus-visible, .code-wrap summary:focus-visible, a:focus-visible { outline: 2px solid var(--status, var(--ink)); outline-offset: 2px; }
+
+.barcode { display: flex; height: 38px; gap: 0; border-top: 1px dashed var(--rule); padding-top: 12px; }
+.barcode span { background: var(--ink); height: 100%; }
+.barcode-label { margin-top: 4px !important; overflow-wrap: anywhere; }
+
+.tools { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.tools li { display: grid; grid-template-columns: 1.6em 1fr; border-top: 1px dashed var(--rule); padding-top: 8px; }
+.tools .mark { font-weight: 800; }
+.tools [data-s="broken"] .mark { color: var(--fail); }
+.tools [data-s="degraded"] .mark { color: var(--network); }
+.tools [data-s="works"] .mark { color: var(--pass); }
+.tools .use { font-size: 12px; color: var(--ink-soft); }
+
+.foot p { font-size: 13px; }
+@media (max-width: 380px) { .recipe .title { padding-right: 0; padding-top: 34px; } .stamp { top: 40px; } }
+
+/* zcash-now repo additions */
+.recipe[data-status="skipped"] { --status: var(--pending); }
+.recipe[data-status="skipped"] .barcode { opacity: .35; }
+.cost { border: 1px solid currentColor; padding: 0 5px; border-radius: 3px; }
+.proves { font-size: 12px; }
+.carried { color: var(--ink-soft); font-size: 11px; }

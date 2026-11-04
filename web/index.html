@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>zcash-now</title>
+  <meta name="description" content="Zcash documentation that cannot lie: every recipe is run against NU7 testnet and stamped with the block height and txid it produced.">
+  <link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="counter">
+    <header class="ticket head">
+      <p class="tiny">*** DOCS WITH A RECEIPT ***</p>
+      <h1>ZCASH-NOW</h1>
+      <p class="pitch">Zcash documentation that cannot lie. Every recipe is run against NU7 testnet and stamped with the block and txid it produced.</p>
+      <dl class="meta" id="meta"></dl>
+      <p class="totals" id="totals"></p>
+    </header>
+
+    <section id="recipes" aria-label="Recipes"></section>
+
+    <section class="ticket" aria-labelledby="broken-h">
+      <h2 id="broken-h">DON'T USE THESE ON NU7 TODAY</h2>
+      <ul class="tools" id="tools"></ul>
+    </section>
+
+    <section class="ticket" aria-labelledby="agents-h">
+      <h2 id="agents-h">FOR YOUR AI AGENT</h2>
+      <p>Point your agent at <a href="llms.txt">llms.txt</a>, or install the MCP server:</p>
+      <div class="code"><pre><code id="mcp-cmd">claude mcp add zcash-now -- npx -y github:dexalien/zcash-now</code></pre><button class="copy" data-copy="mcp-cmd">COPY</button></div>
+      <p class="tiny">14 tools: recipe_that_works · tool_status · explain_error · privacy_lint · decode_address · verify_transaction · … Read-only. Holds no keys.</p>
+    </section>
+
+    <footer class="ticket foot">
+      <h2>PRIVACY &amp; TRUST</h2>
+      <p>Recipe payments are shielded: amount, sender and receiver are not public. The light-wallet server sees the runner's IP and when it syncs and broadcasts. Every txid here is re-verified over gRPC, not scraped from an explorer. This page loads no third-party scripts, fonts or trackers.</p>
+      <p class="tiny"><a href="receipts.json">receipts.json</a> · <a href="receipts-history.jsonl">history</a> · <a href="llms.txt">llms.txt</a> · <a href="https://github.com/dexalien/zcash-now">source</a></p>
+      <p class="tiny center">THANK YOU FOR NOT TRUSTING US<br>— VERIFY ON-CHAIN —</p>
+    </footer>
+  </main>
+
+  <template id="ticket-tpl">
+    <article class="ticket recipe">
+      <div class="row top"><span class="no"></span><span class="cost"></span></div>
+      <h2 class="title"></h2>
+      <p class="summary proves"></p>
+      <div class="stamp"></div>
+      <dl class="lines"></dl>
+      <div class="history" aria-label="Last runs"></div>
+      <p class="leaks"></p>
+      <details class="code-wrap"><summary>COPY THE CODE</summary><div class="code"><pre><code></code></pre><button class="copy">COPY</button></div></details>
+      <div class="barcode" aria-hidden="true"></div>
+      <p class="tiny center barcode-label"></p>
+    </article>
+  </template>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>

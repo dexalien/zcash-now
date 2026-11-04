@@ -1,0 +1,13 @@
+{
+  "buildCommand": "npx tsc && node scripts/build-site.mjs",
+  "outputDirectory": "public",
+  "headers": [
+    {
+      "source": "/(data.json|receipts.json|receipts-history.jsonl|llms.txt)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=60" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ]
+}
