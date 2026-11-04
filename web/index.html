@@ -15,29 +15,42 @@
       <h1>Zcash changed.<br>Your AI didn't.</h1>
       <p class="lede">An MCP server that gives your coding agent <strong>only Zcash code that worked on-chain today</strong>, with the txid to prove it.</p>
 
-      <div class="install">
-        <code id="cmd">claude mcp add zcash-now -- npx -y github:dexalien/zcash-now</code>
-        <button id="copy-cmd" type="button">Copy</button>
+      <div class="printer" id="printer">
+        <div class="body">
+          <span class="led" id="led" aria-hidden="true"></span>
+          <code id="cmd">claude mcp add zcash-now -- npx -y github:dexalien/zcash-now</code>
+          <button id="copy-cmd" type="button">Copy</button>
+        </div>
+        <div class="mouth" aria-hidden="true"><span class="slit"></span></div>
+        <div class="feed">
+          <article class="ticket" id="ticket" aria-label="Latest on-chain proof">
+           <div class="paper">
+            <header>
+              <p class="t-brand">*** ZCASH-NOW ***</p>
+              <p>PROOF OF A WORKING RECIPE</p>
+              <p id="t-net">NU7 TESTNET</p>
+              <p id="t-date"></p>
+            </header>
+            <p class="t-item">SHIELDED PAYMENT + MEMO<br><span>sent by a script · no human</span></p>
+            <dl id="t-lines"></dl>
+            <p class="t-total"><span>RESULT</span><span id="t-result">…</span></p>
+            <div class="stamp" id="stamp" aria-hidden="true"></div>
+            <div class="barcode" id="barcode" aria-hidden="true"></div>
+            <p class="t-txid" id="t-txid"></p>
+            <p class="t-thanks">THANK YOU FOR NOT TRUSTING US<br><a id="t-verify" target="_blank" rel="noopener noreferrer">VERIFY ON-CHAIN ↗</a></p>
+           </div>
+          </article>
+        </div>
       </div>
       <p class="alt">No MCP? Point any agent at <a href="llms.txt">llms.txt</a>.</p>
     </section>
 
-    <section class="proof" aria-labelledby="proof-h">
-      <h2 id="proof-h" class="label">Latest proof</h2>
-      <article class="receipt" id="receipt">
-        <div class="stamp" id="stamp">…</div>
-        <p class="r-title">Shielded payment with a memo,<br>sent by a script. No human.</p>
-        <dl id="r-lines"></dl>
-        <div class="barcode" id="barcode" aria-hidden="true"></div>
-        <p class="r-txid" id="r-txid"></p>
-      </article>
-    </section>
-
     <section class="truth" aria-labelledby="truth-h">
       <h2 id="truth-h" class="label">What's true on Zcash today</h2>
+      <p class="sub" id="works-meta"></p>
       <div class="cols">
         <div>
-          <h3 class="ok">Works <span id="works-meta"></span></h3>
+          <h3 class="ok">Works</h3>
           <ul id="works"></ul>
         </div>
         <div>
@@ -49,9 +62,9 @@
 
     <section class="how" aria-label="How it works">
       <ol>
-        <li><b>Run.</b> Every recipe runs against NU7 testnet.</li>
-        <li><b>Stamp.</b> Each result keeps its block and txid.</li>
-        <li><b>Serve.</b> Your agent only gets what passed.</li>
+        <li><b>Run</b>Every recipe runs against NU7 testnet.</li>
+        <li><b>Stamp</b>Each result keeps its block and txid.</li>
+        <li><b>Serve</b>Your agent only gets what passed.</li>
       </ol>
     </section>
 
