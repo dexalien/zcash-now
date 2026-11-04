@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-11-04T12:48:31.287Z",
+  "generatedAt": "2026-11-04T12:52:17.717Z",
   "endpoint": "testnet.zec.rocks:443",
-  "blockHeight": 4582092,
+  "blockHeight": 4582101,
   "factsCheckedOn": "2026-11-04",
   "summary": {
-    "pass": 7,
+    "pass": 8,
     "fail": 0,
     "network": 0,
     "skipped": 1
@@ -13,22 +13,22 @@
     {
       "recipeId": "chain-status",
       "status": "pass",
-      "ranAt": "2026-11-04T12:47:19.428Z",
-      "blockHeight": 4582092,
+      "ranAt": "2026-11-04T12:52:16.414Z",
+      "blockHeight": 4582101,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v25.9.0",
         "@grpc/grpc-js": "1.14.7",
         "proto": "zcash/lightwallet-protocol v0.6.0"
       },
-      "detail": "tip 4582092, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1",
+      "detail": "tip 4582101, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1",
       "leaks": "The light-wallet server learns your IP address and that you asked for chain state. Nothing about any wallet or address is sent."
     },
     {
       "recipeId": "standard-fee",
       "status": "pass",
-      "ranAt": "2026-11-04T12:47:20.303Z",
-      "blockHeight": 4582092,
+      "ranAt": "2026-11-04T12:52:17.067Z",
+      "blockHeight": 4582101,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v25.9.0",
@@ -41,8 +41,8 @@
     {
       "recipeId": "payment-request",
       "status": "pass",
-      "ranAt": "2026-11-04T12:47:20.493Z",
-      "blockHeight": 4582092,
+      "ranAt": "2026-11-04T12:52:17.213Z",
+      "blockHeight": 4582101,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v25.9.0",
@@ -53,10 +53,24 @@
       "leaks": "Nothing over the network: this runs offline. But the URI itself is the leak surface. Anyone you hand it to sees the address, the amount and the memo, and a memo is readable by every holder of the viewing key, so put an opaque order id there and not a customer's name."
     },
     {
+      "recipeId": "fact-base-drift",
+      "status": "pass",
+      "ranAt": "2026-11-04T12:52:17.215Z",
+      "blockHeight": 4582101,
+      "toolVersions": {
+        "zcash-now": "0.1.0",
+        "node": "v25.9.0",
+        "@grpc/grpc-js": "1.14.7",
+        "proto": "zcash/lightwallet-protocol v0.6.0"
+      },
+      "detail": "18 asserted ZIP statuses all match the published index (87 rows read)",
+      "leaks": "zips.z.cash learns the runner's IP address and that it fetched the public index. No address, key or transaction is involved."
+    },
+    {
       "recipeId": "decode-address",
       "status": "pass",
-      "ranAt": "2026-11-04T12:47:20.497Z",
-      "blockHeight": 4582092,
+      "ranAt": "2026-11-04T12:52:17.461Z",
+      "blockHeight": 4582101,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v25.9.0",
@@ -78,7 +92,8 @@
         "server": "testnet.zec.rocks:443"
       },
       "detail": "sent 10000 zat to its own unified address with memo \"zcash-now 2026-11-04T12:47:20.519Z\"",
-      "leaks": "On chain: nothing about amount, sender or receiver; the memo is encrypted. Off chain: testnet.zec.rocks sees the runner's IP and the moment it broadcasts, unless ZCASH_NOW_CONNECTION=tor routes it over Tor. The runner holds a testnet seed, which is a trust cost we accept for testnet only. Publishing the txid links this payment to this project, by choice."
+      "leaks": "On chain: nothing about amount, sender or receiver; the memo is encrypted. Off chain: testnet.zec.rocks sees the runner's IP and the moment it broadcasts, unless ZCASH_NOW_CONNECTION=tor routes it over Tor. The runner holds a testnet seed, which is a trust cost we accept for testnet only. Publishing the txid links this payment to this project, by choice.",
+      "carried": true
     },
     {
       "recipeId": "read-memo",
@@ -92,13 +107,14 @@
         "server": "testnet.zec.rocks:443"
       },
       "detail": "memo decrypted locally from the tx mined at 4582095, outputs in Ironwood, after 3 sync(s)",
-      "leaks": "The light-wallet server sees the runner's IP and when it syncs. It serves the same compact blocks to everyone, so it does not learn which transactions are ours. The memo never leaves the machine."
+      "leaks": "The light-wallet server sees the runner's IP and when it syncs. It serves the same compact blocks to everyone, so it does not learn which transactions are ours. The memo never leaves the machine.",
+      "carried": true
     },
     {
       "recipeId": "verify-txid",
       "status": "pass",
-      "ranAt": "2026-11-04T12:48:30.893Z",
-      "blockHeight": 4582092,
+      "ranAt": "2026-11-04T12:52:17.463Z",
+      "blockHeight": 4582101,
       "txid": "13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908",
       "toolVersions": {
         "zcash-now": "0.1.0",
@@ -112,8 +128,8 @@
     {
       "recipeId": "shielded-send",
       "status": "skipped",
-      "ranAt": "2026-11-04T12:48:31.287Z",
-      "blockHeight": 4582092,
+      "ranAt": "2026-11-04T12:52:17.717Z",
+      "blockHeight": 4582101,
       "detail": "No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule.",
       "leaks": "On chain: nothing about amount, sender or receiver, which is the point of a shielded payment. Off chain: the wallet's own light-wallet server sees your IP and the moment you broadcast, which is a timing signal. The memo is readable by every holder of the viewing key. And once the txid is published as a receipt here, this particular payment is publicly linked to this project, which is a disclosure we chose to make and would not make with a real user's payment."
     }

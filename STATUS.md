@@ -4,19 +4,20 @@ Every row was produced by running the recipe, not by asserting it works.
 A grey row says what is missing instead of claiming a pass.
 
 - Checked against: `testnet.zec.rocks:443`
-- Chain height at the time: 4582092
-- Generated: 2026-11-04T12:48:31.287Z
+- Chain height at the time: 4582101
+- Generated: 2026-11-04T12:52:17.717Z
 
 | | Recipe | Cost | Proof | Detail |
 |---|---|---|---|---|
-| green | `chain-status` | read | block 4582092 | tip 4582092, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1 |
-| green | `standard-fee` | read | block 4582092 | 1000 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee) |
-| green | `payment-request` | pure | block 4582092 | round-tripped and rejected 6 invalid URIs |
-| green | `decode-address` | pure | block 4582092 | round-tripped a utest unified address through Bech32m and F4Jumble, recovered typecode 0x3, and rejected 3 addresses a prefix check would accept |
+| green | `chain-status` | read | block 4582101 | tip 4582101, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1 |
+| green | `standard-fee` | read | block 4582101 | 1000 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee) |
+| green | `payment-request` | pure | block 4582101 | round-tripped and rejected 6 invalid URIs |
+| green | `fact-base-drift` | read | block 4582101 | 18 asserted ZIP statuses all match the published index (87 rows read) |
+| green | `decode-address` | pure | block 4582101 | round-tripped a utest unified address through Bech32m and F4Jumble, recovered typecode 0x3, and rejected 3 addresses a prefix check would accept |
 | green | `headless-send` | spend | `13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908` | sent 10000 zat to its own unified address with memo "zcash-now 2026-11-04T12:47:20.519Z" |
 | green | `read-memo` | read | `13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908` | memo decrypted locally from the tx mined at 4582095, outputs in Ironwood, after 3 sync(s) |
 | green | `verify-txid` | read | `13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908` | txid mined at height 4582095, 9166 bytes |
-| grey | `shielded-send` | human | block 4582092 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
+| grey | `shielded-send` | human | block 4582101 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
 
 **amber is not red.** A network row means the light-wallet server or the path
 to it did not answer, which says nothing about whether the recipe works. Only a
@@ -31,6 +32,7 @@ write and easy to ignore, and this travels with the code.
 - **`chain-status`** — The light-wallet server learns your IP address and that you asked for chain state. Nothing about any wallet or address is sent.
 - **`standard-fee`** — The light-wallet server learns your IP address. The query carries no address, amount or transaction.
 - **`payment-request`** — Nothing over the network: this runs offline. But the URI itself is the leak surface. Anyone you hand it to sees the address, the amount and the memo, and a memo is readable by every holder of the viewing key, so put an opaque order id there and not a customer's name.
+- **`fact-base-drift`** — zips.z.cash learns the runner's IP address and that it fetched the public index. No address, key or transaction is involved.
 - **`decode-address`** — Nothing. This is offline arithmetic on the address itself; no server is contacted and the address never leaves the process.
 - **`verify-txid`** — The light-wallet server learns your IP address and exactly which transaction you care about. That is a real disclosure, and it is why this goes to a light-wallet server over TLS instead of to a third-party explorer: one party instead of two. Routing it through Nym would remove the IP, and has not been done yet.
 - **`shielded-send`** — On chain: nothing about amount, sender or receiver, which is the point of a shielded payment. Off chain: the wallet's own light-wallet server sees your IP and the moment you broadcast, which is a timing signal. The memo is readable by every holder of the viewing key. And once the txid is published as a receipt here, this particular payment is publicly linked to this project, which is a disclosure we chose to make and would not make with a real user's payment.

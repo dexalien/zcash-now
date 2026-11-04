@@ -252,6 +252,18 @@ export function decodeUnifiedAddress(
 
   const trimmed = address.trim();
 
+  // 0. Case. Bech32 permits all-lower or all-upper and requires mixed case to
+  //    be rejected, because mixing it breaks the checksum's case guarantee.
+  //    Lower-casing first would launder an invalid address into a valid one,
+  //    which is the exact failure this module exists to prevent.
+  if (/[a-z]/.test(trimmed) && /[A-Z]/.test(trimmed)) {
+    result.errors.push(
+      "Mixed case. A Bech32m string must be entirely lower case or entirely " +
+        "upper case; a mixed-case string must be rejected, not normalised.",
+    );
+    return result;
+  }
+
   // 1. Bech32m. A failing checksum is the whole point of decoding rather than
   //    prefix-matching, so it is an error, not a warning.
   let decoded;
