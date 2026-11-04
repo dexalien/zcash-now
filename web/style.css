@@ -53,14 +53,12 @@ section.hero { border-top: 0; padding: 80px 0 48px; }
 h1 {
   font-family: "Geist Serif", "Times New Roman", serif;
   font-weight: 400;
-  font-style: italic;
-  font-synthesis: style;
   font-variation-settings: "ELSH" 50;
-  font-size: clamp(40px, 11vw, 104px);
+  font-size: clamp(36px, 8vw, 76px);
   line-height: .98; letter-spacing: -.025em;
   margin: 0 0 24px;
 }
-h1 em { font-style: italic; color: var(--zec); }
+h1 em { font-style: normal; color: var(--zec); }
 .lede { font-size: clamp(18px, 3.2vw, 21px); color: var(--muted); max-width: 32em; margin: 0 auto; }
 .lede strong { color: var(--text); font-weight: 600; }
 .alt { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
