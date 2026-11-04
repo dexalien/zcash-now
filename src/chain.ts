@@ -37,10 +37,13 @@ export interface StandardFee {
   estimatorVersion: number;
 }
 
-let cached: grpc.Client | null = null;
+// Keyed by endpoint: a single cached client silently ignored the argument,
+// so asking for a second server returned a client for the first.
+const clients = new Map<string, any>();
 
 function client(endpoint = ENDPOINTS.testnet): any {
-  if (cached) return cached;
+  const existing = clients.get(endpoint);
+  if (existing) return existing;
   const def = protoLoader.loadSync(join(PROTO_DIR, "service.proto"), {
     keepCase: true,
     longs: String,
@@ -51,8 +54,11 @@ function client(endpoint = ENDPOINTS.testnet): any {
   });
   const pkg = grpc.loadPackageDefinition(def) as any;
   const Ctor = pkg.cash.z.wallet.sdk.rpc.CompactTxStreamer;
-  cached = new Ctor(endpoint, grpc.credentials.createSsl());
-  return cached;
+  // TLS always: an insecure channel would show the server every address we
+  // sync and every transaction we look up, to anyone on the path.
+  const made = new Ctor(endpoint, grpc.credentials.createSsl());
+  clients.set(endpoint, made);
+  return made;
 }
 
 function call<T>(method: string, arg: unknown, timeoutMs = 15_000): Promise<T> {
@@ -194,8 +200,6 @@ export async function chainStatus(): Promise<ChainStatus> {
 }
 
 export function closeChain(): void {
-  if (cached) {
-    (cached as any).close?.();
-    cached = null;
-  }
+  for (const c of clients.values()) c?.close?.();
+  clients.clear();
 }

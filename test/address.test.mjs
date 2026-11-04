@@ -37,13 +37,25 @@ console.log(`receivers correctos ${matched}/${rows.length}`);
 if (problems.length) console.log("\nproblemas:", [...new Set(problems)].slice(0,6).join("; "));
 
 console.log("\n=== reglas que DEBEN rechazar ===");
+const sample = String(rows[0][6]);
+const valid = /^[0-9a-f]+$/i.test(sample) ? Buffer.from(sample, "hex").toString("ascii") : sample;
+
 const checks = [
   ["checksum roto", "u1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"],
   ["hrp inventado", "zq1abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz"],
   ["vacio", ""],
+  // Regresion: lower-casing a mixed-case string would launder an invalid
+  // address into a valid one. Bech32 requires rejecting mixed case.
+  ["mayusculas mezcladas", valid.slice(0, 10) + valid.slice(10).toUpperCase()],
 ];
 for (const [name, a] of checks) {
   const r = decodeUnifiedAddress(a);
   console.log(`  ${name}: ${r.valid ? "ACEPTADO <-- problema" : "rechazado OK -> " + (r.errors[0]||"").slice(0,58)}`);
 }
 if (decoded === 0) process.exit(1);
+
+console.log("");
+console.log("=== mayusculas completas DEBEN aceptarse (son validas por spec) ===");
+const up = decodeUnifiedAddress(valid.toUpperCase());
+console.log(`  toda mayuscula: ${up.valid ? "aceptada OK" : "RECHAZADA <-- problema: " + (up.errors[0]||"")}`);
+if (!up.valid) process.exit(1);
