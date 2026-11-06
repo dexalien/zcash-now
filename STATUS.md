@@ -7,20 +7,20 @@ the time it actually happened, because a spend cannot run where there is no
 wallet.
 
 - Checked against: `testnet.zec.rocks:443`
-- Chain height at the time: 4589299
-- Generated: 2026-11-06T15:00:30.243Z
+- Chain height at the time: 4591962
+- Generated: 2026-11-06T20:53:39.885Z
 
 | | Recipe | Cost | Proof | Detail |
 |---|---|---|---|---|
-| green | `chain-status` | read | block 4589299 | tip 4589299, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1 |
-| green | `standard-fee` | read | block 4589299 | 1000 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee) |
-| green | `payment-request` | pure | block 4589299 | round-tripped and rejected 6 invalid URIs |
-| RED | `fact-base-drift` | read | block 4589299 | 2 ZIP(s) drifted from the published index. ZIP 2005 (Ironwood Quantum Recoverability): we say "Proposed", the index says "Final". The fact base is out of date. \| ZIP 229 (Version 6 Transaction Format): we say "Draft", the index says "Final". The fact base is out of date. |
-| green | `decode-address` | pure | block 4589299 | round-tripped a utest unified address through Bech32m and F4Jumble, recovered typecode 0x3, and rejected 3 addresses a prefix check would accept |
+| green | `chain-status` | read | block 4591962 | tip 4591962, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1 |
+| green | `standard-fee` | read | block 4591962 | 1000 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee) |
+| green | `payment-request` | pure | block 4591962 | round-tripped and rejected 6 invalid URIs |
+| RED | `fact-base-drift` | read | block 4591962 | 2 ZIP(s) drifted from the published index. ZIP 2005 (Ironwood Quantum Recoverability): we say "Proposed", the index says "Final". The fact base is out of date. \| ZIP 229 (Version 6 Transaction Format): we say "Draft", the index says "Final". The fact base is out of date. |
+| green | `decode-address` | pure | block 4591962 | round-tripped a utest unified address through Bech32m and F4Jumble, recovered typecode 0x3, and rejected 3 addresses a prefix check would accept |
 | carried | `headless-send` | spend | `13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908` | carried from the run at 2026-11-04T12:47:20.519Z. sent 10000 zat to its own unified address with memo "zcash-now 2026-11-04T12:47:20.519Z" |
 | carried | `read-memo` | read | `13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908` | carried from the run at 2026-11-04T12:47:25.323Z. memo decrypted locally from the tx mined at 4582095, outputs in Ironwood, after 3 sync(s) |
 | green | `verify-txid` | read | `13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908` | txid mined at height 4582095, 9166 bytes |
-| grey | `shielded-send` | human | block 4589299 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
+| grey | `shielded-send` | human | block 4591962 | No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule. |
 
 **amber is not red.** A network row means the light-wallet server or the path
 to it did not answer, which says nothing about whether the recipe works. Only a
