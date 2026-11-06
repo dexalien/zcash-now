@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-05T23:37:48.024Z",
+  "generatedAt": "2026-11-06T06:40:26.588Z",
   "endpoint": "testnet.zec.rocks:443",
-  "blockHeight": 4587101,
+  "blockHeight": 4588117,
   "factsCheckedOn": "2026-11-04",
   "summary": {
-    "pass": 8,
-    "fail": 0,
+    "pass": 7,
+    "fail": 1,
     "network": 0,
     "skipped": 1
   },
@@ -13,22 +13,22 @@
     {
       "recipeId": "chain-status",
       "status": "pass",
-      "ranAt": "2026-11-05T23:37:47.005Z",
-      "blockHeight": 4587101,
+      "ranAt": "2026-11-06T06:40:25.778Z",
+      "blockHeight": 4588117,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v24.22.2",
         "@grpc/grpc-js": "1.14.7",
         "proto": "zcash/lightwallet-protocol v0.6.0"
       },
-      "detail": "tip 4587101, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1",
+      "detail": "tip 4588117, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1",
       "leaks": "The light-wallet server learns your IP address and that you asked for chain state. Nothing about any wallet or address is sent."
     },
     {
       "recipeId": "standard-fee",
       "status": "pass",
-      "ranAt": "2026-11-05T23:37:47.253Z",
-      "blockHeight": 4587101,
+      "ranAt": "2026-11-06T06:40:26.150Z",
+      "blockHeight": 4588117,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v24.22.2",
@@ -41,8 +41,8 @@
     {
       "recipeId": "payment-request",
       "status": "pass",
-      "ranAt": "2026-11-05T23:37:47.318Z",
-      "blockHeight": 4587101,
+      "ranAt": "2026-11-06T06:40:26.169Z",
+      "blockHeight": 4588117,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v24.22.2",
@@ -54,23 +54,23 @@
     },
     {
       "recipeId": "fact-base-drift",
-      "status": "pass",
-      "ranAt": "2026-11-05T23:37:47.323Z",
-      "blockHeight": 4587101,
+      "status": "fail",
+      "ranAt": "2026-11-06T06:40:26.172Z",
+      "blockHeight": 4588117,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v24.22.2",
         "@grpc/grpc-js": "1.14.7",
         "proto": "zcash/lightwallet-protocol v0.6.0"
       },
-      "detail": "18 asserted ZIP statuses all match the published index (87 rows read)",
+      "error": "2 ZIP(s) drifted from the published index. ZIP 2005 (Ironwood Quantum Recoverability): we say \"Proposed\", the index says \"Final\". The fact base is out of date. | ZIP 229 (Version 6 Transaction Format): we say \"Draft\", the index says \"Final\". The fact base is out of date.",
       "leaks": "zips.z.cash learns the runner's IP address and that it fetched the public index. No address, key or transaction is involved."
     },
     {
       "recipeId": "decode-address",
       "status": "pass",
-      "ranAt": "2026-11-05T23:37:47.946Z",
-      "blockHeight": 4587101,
+      "ranAt": "2026-11-06T06:40:26.559Z",
+      "blockHeight": 4588117,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v24.22.2",
@@ -113,8 +113,8 @@
     {
       "recipeId": "verify-txid",
       "status": "pass",
-      "ranAt": "2026-11-05T23:37:47.948Z",
-      "blockHeight": 4587101,
+      "ranAt": "2026-11-06T06:40:26.562Z",
+      "blockHeight": 4588117,
       "txid": "13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908",
       "toolVersions": {
         "zcash-now": "0.1.0",
@@ -128,8 +128,8 @@
     {
       "recipeId": "shielded-send",
       "status": "skipped",
-      "ranAt": "2026-11-05T23:37:48.024Z",
-      "blockHeight": 4587101,
+      "ranAt": "2026-11-06T06:40:26.588Z",
+      "blockHeight": 4588117,
       "detail": "No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule.",
       "leaks": "On chain: nothing about amount, sender or receiver, which is the point of a shielded payment. Off chain: the wallet's own light-wallet server sees your IP and the moment you broadcast, which is a timing signal. The memo is readable by every holder of the viewing key. And once the txid is published as a receipt here, this particular payment is publicly linked to this project, which is a disclosure we chose to make and would not make with a real user's payment."
     }
