@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-08T17:02:12.308Z",
+  "generatedAt": "2026-11-08T21:09:47.610Z",
   "endpoint": "testnet.zec.rocks:443",
-  "blockHeight": 4598406,
+  "blockHeight": 4598988,
   "factsCheckedOn": "2026-11-04",
   "summary": {
     "pass": 7,
@@ -13,22 +13,22 @@
     {
       "recipeId": "chain-status",
       "status": "pass",
-      "ranAt": "2026-11-08T17:02:11.563Z",
-      "blockHeight": 4598406,
+      "ranAt": "2026-11-08T21:09:46.368Z",
+      "blockHeight": 4598988,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v24.22.2",
         "@grpc/grpc-js": "1.14.7",
         "proto": "zcash/lightwallet-protocol v0.6.0"
       },
-      "detail": "tip 4598406, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1",
+      "detail": "tip 4598988, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1",
       "leaks": "The light-wallet server learns your IP address and that you asked for chain state. Nothing about any wallet or address is sent."
     },
     {
       "recipeId": "standard-fee",
       "status": "pass",
-      "ranAt": "2026-11-08T17:02:11.828Z",
-      "blockHeight": 4598406,
+      "ranAt": "2026-11-08T21:09:46.978Z",
+      "blockHeight": 4598988,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v24.22.2",
@@ -41,8 +41,8 @@
     {
       "recipeId": "payment-request",
       "status": "pass",
-      "ranAt": "2026-11-08T17:02:11.849Z",
-      "blockHeight": 4598406,
+      "ranAt": "2026-11-08T21:09:47.010Z",
+      "blockHeight": 4598988,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v24.22.2",
@@ -55,8 +55,8 @@
     {
       "recipeId": "fact-base-drift",
       "status": "fail",
-      "ranAt": "2026-11-08T17:02:11.853Z",
-      "blockHeight": 4598406,
+      "ranAt": "2026-11-08T21:09:47.014Z",
+      "blockHeight": 4598988,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v24.22.2",
@@ -69,8 +69,8 @@
     {
       "recipeId": "decode-address",
       "status": "pass",
-      "ranAt": "2026-11-08T17:02:12.277Z",
-      "blockHeight": 4598406,
+      "ranAt": "2026-11-08T21:09:47.568Z",
+      "blockHeight": 4598988,
       "toolVersions": {
         "zcash-now": "0.1.0",
         "node": "v24.22.2",
@@ -113,8 +113,8 @@
     {
       "recipeId": "verify-txid",
       "status": "pass",
-      "ranAt": "2026-11-08T17:02:12.279Z",
-      "blockHeight": 4598406,
+      "ranAt": "2026-11-08T21:09:47.570Z",
+      "blockHeight": 4598988,
       "txid": "13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908",
       "toolVersions": {
         "zcash-now": "0.1.0",
@@ -128,8 +128,8 @@
     {
       "recipeId": "shielded-send",
       "status": "skipped",
-      "ranAt": "2026-11-08T17:02:12.308Z",
-      "blockHeight": 4598406,
+      "ranAt": "2026-11-08T21:09:47.610Z",
+      "blockHeight": 4598988,
       "detail": "No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule.",
       "leaks": "On chain: nothing about amount, sender or receiver, which is the point of a shielded payment. Off chain: the wallet's own light-wallet server sees your IP and the moment you broadcast, which is a timing signal. The memo is readable by every holder of the viewing key. And once the txid is published as a receipt here, this particular payment is publicly linked to this project, which is a disclosure we chose to make and would not make with a real user's payment."
     }
