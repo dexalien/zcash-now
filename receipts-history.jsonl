@@ -226,3 +226,10 @@
 {"recipeId":"decode-address","status":"pass","ranAt":"2026-11-10T17:48:58.275Z","blockHeight":4605391,"txid":null}
 {"recipeId":"verify-txid","status":"pass","ranAt":"2026-11-10T17:48:58.277Z","blockHeight":4605391,"txid":"13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908"}
 {"recipeId":"shielded-send","status":"skipped","ranAt":"2026-11-10T17:48:58.336Z","blockHeight":4605391,"txid":null}
+{"recipeId":"chain-status","status":"pass","ranAt":"2026-11-10T23:17:32.670Z","blockHeight":4606257,"txid":null}
+{"recipeId":"standard-fee","status":"pass","ranAt":"2026-11-10T23:17:33.182Z","blockHeight":4606257,"txid":null}
+{"recipeId":"payment-request","status":"pass","ranAt":"2026-11-10T23:17:33.263Z","blockHeight":4606257,"txid":null}
+{"recipeId":"fact-base-drift","status":"fail","ranAt":"2026-11-10T23:17:33.267Z","blockHeight":4606257,"txid":null}
+{"recipeId":"decode-address","status":"pass","ranAt":"2026-11-10T23:17:33.892Z","blockHeight":4606257,"txid":null}
+{"recipeId":"verify-txid","status":"pass","ranAt":"2026-11-10T23:17:33.894Z","blockHeight":4606257,"txid":"13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908"}
+{"recipeId":"shielded-send","status":"skipped","ranAt":"2026-11-10T23:17:33.987Z","blockHeight":4606257,"txid":null}
