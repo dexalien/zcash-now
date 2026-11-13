@@ -6,7 +6,7 @@
 > writing Zcash code, read this before you write it.
 
 Generated from the fact base of https://github.com/dexalien/zcash-now, which
-re-runs its recipes against live testnet. Facts checked on 2026-11-04, against testnet block 4616479.
+re-runs its recipes against live testnet. Facts checked on 2026-11-04, against testnet block 4617342.
 
 ## Read this first
 
@@ -157,7 +157,7 @@ Find out which chain I am on and whether NU7 is active
 
 Proves: The light-wallet server answers, and NU7 activation is decided against the height the chain reports rather than a constant in the code.
 Leaks: The light-wallet server learns your IP address and that you asked for chain state. Nothing about any wallet or address is sent.
-Receipt: pass, block 4616479, tip 4616479, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1
+Receipt: pass, block 4617342, tip 4617342, branch 77190ad9, NU7 active above 4465026, server ECC LightWalletD v0.6.1
 
 ```ts
 import { chainStatus } from "zcash-now/chain";
@@ -172,7 +172,7 @@ Get the current fee instead of hardcoding one
 
 Proves: The fee comes from the server. A constant written today can be wrong tomorrow, and ZIP 317 Revision 2 is still Proposed.
 Leaks: The light-wallet server learns your IP address. The query carries no address, amount or transaction.
-Receipt: pass, block 4616479, 400 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee)
+Receipt: pass, block 4617342, 400 zatoshi per logical action, estimatorVersion 0 (static ZIP 317 marginal fee)
 
 ```ts
 import { getStandardFee } from "zcash-now/chain";
@@ -189,7 +189,7 @@ Ask for a shielded payment with an order ID in the memo
 
 Proves: The URI satisfies the thirteen ZIP 321 validation rules and survives a round trip, including base64url memo encoding with no padding.
 Leaks: Nothing over the network: this runs offline. But the URI itself is the leak surface. Anyone you hand it to sees the address, the amount and the memo, and a memo is readable by every holder of the viewing key, so put an opaque order id there and not a customer's name.
-Receipt: pass, block 4616479, round-tripped and rejected 6 invalid URIs
+Receipt: pass, block 4617342, round-tripped and rejected 6 invalid URIs
 
 ```ts
 import { build, parse } from "zcash-now/zip321";
@@ -212,7 +212,7 @@ Check that the facts this server states still match the ZIPs
 
 Proves: Every ZIP status this server asserts still matches zips.z.cash. When one changes, this goes red and names the drift, instead of the fact base quietly rotting.
 Leaks: zips.z.cash learns the runner's IP address and that it fetched the public index. No address, key or transaction is involved.
-Receipt: fail, block 4616479
+Receipt: fail, block 4617342
 
 ```ts
 import { checkFactBase } from "zcash-now/zipcheck";
@@ -229,7 +229,7 @@ Check that an address is really usable, not just shaped right
 
 Proves: Bech32m, the F4Jumble inverse and ZIP 316 typecode parsing all agree, and addresses that a prefix check would wave through are rejected.
 Leaks: Nothing. This is offline arithmetic on the address itself; no server is contacted and the address never leaves the process.
-Receipt: pass, block 4616479, round-tripped a utest unified address through Bech32m and F4Jumble, recovered typecode 0x3, and rejected 3 addresses a prefix check would accept
+Receipt: pass, block 4617342, round-tripped a utest unified address through Bech32m and F4Jumble, recovered typecode 0x3, and rejected 3 addresses a prefix check would accept
 
 ```ts
 import { decodeUnifiedAddress } from "zcash-now/address";
@@ -249,7 +249,7 @@ Confirm on chain that a payment really happened
 
 Proves: The transaction exists on the chain the server is serving, read over gRPC rather than scraped from an explorer.
 Leaks: The light-wallet server learns your IP address and exactly which transaction you care about. That is a real disclosure, and it is why this goes to a light-wallet server over TLS instead of to a third-party explorer: one party instead of two. Routing it through Nym would remove the IP, and has not been done yet.
-Receipt: pass, block 4616479, txid 13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908, txid mined at height 4582095, 9166 bytes
+Receipt: pass, block 4617342, txid 13fefa00dd7b28a221430450b683be28e03a8a9d5b3bc6296252c0de20463908, txid mined at height 4582095, 9166 bytes
 
 ```ts
 import { getTransaction } from "zcash-now/chain";
@@ -267,7 +267,7 @@ Send a real shielded payment on testnet
 
 Proves: A shielded payment with a memo, broadcast to public testnet, returning a txid that verify-txid can then confirm independently.
 Leaks: On chain: nothing about amount, sender or receiver, which is the point of a shielded payment. Off chain: the wallet's own light-wallet server sees your IP and the moment you broadcast, which is a timing signal. The memo is readable by every holder of the viewing key. And once the txid is published as a receipt here, this particular payment is publicly linked to this project, which is a disclosure we chose to make and would not make with a real user's payment.
-Receipt: skipped, block 4616479, No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule.
+Receipt: skipped, block 4617342, No sealed txid yet. Set ZCASH_NOW_SEALED_TXID to the txid of a shielded payment approved in a wallet. This recipe is human-gated: Noir Wallet requires approval, so it cannot run on a schedule.
 
 ```ts
 // Browser only. Noir Wallet testnet is a SEPARATE extension: load the
